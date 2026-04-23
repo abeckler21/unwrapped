@@ -24,3 +24,4 @@
 - Added a Supabase admin helper, profile cache interface, and an initial schema migration for cached profiles and future analysis tables.
 - Added a setup page so missing Spotify or Supabase credentials fail gracefully and explain the next required configuration steps.
 - Verified the auth and setup slice with linting, type-checking, and a production build.
+- Checked Spotify's current redirect URI requirements and updated local development defaults from localhost to 127.0.0.1 so the app matches Spotify's enforced loopback-IP policy.

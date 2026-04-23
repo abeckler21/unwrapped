@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  NEXT_PUBLIC_BASE_URL: z.string().url().default("http://localhost:3000"),
+  NEXT_PUBLIC_BASE_URL: z.string().url().default("http://127.0.0.1:3000"),
   SPOTIFY_CLIENT_ID: z.string().optional(),
   SPOTIFY_CLIENT_SECRET: z.string().optional(),
   SPOTIFY_REDIRECT_URI: z.string().url().optional(),

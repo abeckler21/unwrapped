@@ -60,7 +60,7 @@ npm run type-check   # tsc --noEmit
 # Spotify OAuth
 SPOTIFY_CLIENT_ID=
 SPOTIFY_CLIENT_SECRET=
-SPOTIFY_REDIRECT_URI=http://localhost:3000/api/auth/callback
+SPOTIFY_REDIRECT_URI=http://127.0.0.1:3000/api/auth/callback
 
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=
@@ -68,7 +68,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 
 # App
-NEXT_PUBLIC_BASE_URL=http://localhost:3000
+NEXT_PUBLIC_BASE_URL=http://127.0.0.1:3000
 ```
 
 ## Spotify Developer App Setup (One-Time, Do This First)
@@ -80,7 +80,7 @@ NEXT_PUBLIC_BASE_URL=http://localhost:3000
    - **App name**: `Unwrapped`
    - **App description**: `Reveals how Spotify's algorithm shapes your listening habits`
    - **Redirect URIs**: Add both:
-     - `http://localhost:3000/api/auth/callback` (development)
+     - `http://127.0.0.1:3000/api/auth/callback` (development)
      - `https://your-vercel-domain.vercel.app/api/auth/callback` (add this once you have a Vercel URL)
    - **Which API/SDKs are you planning to use?**: Check **Web API**
 4. Accept the Terms of Service → click **Save**

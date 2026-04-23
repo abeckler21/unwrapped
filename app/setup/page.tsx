@@ -4,7 +4,7 @@ import { getMissingSetupItems, hasSpotifyEnv, hasSupabaseEnv } from "@/lib/env";
 
 const spotifySteps = [
   "Create a Spotify app in the Spotify developer dashboard.",
-  "Add http://localhost:3000/api/auth/callback as a redirect URI.",
+  "Add http://127.0.0.1:3000/api/auth/callback as a redirect URI.",
   "Copy the client ID and client secret into .env.local.",
 ];
 
