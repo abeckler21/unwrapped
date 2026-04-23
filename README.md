@@ -53,7 +53,7 @@ This project is developed in four weekly versions over the course of a month:
 
 ## Academic Context
 
-Built for [course name] at [university name]. Not affiliated with or endorsed by Spotify.
+Built for Design Build Ship Spring 2026 at the University of Chicago. Not affiliated with or endorsed by Spotify.
 
 ## Setup
 
