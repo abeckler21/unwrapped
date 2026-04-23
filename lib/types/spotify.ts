@@ -9,7 +9,7 @@ export type SpotifyImage = {
 export type SpotifyArtist = {
   id: string;
   name: string;
-  genres: string[];
+  genres?: string[];
   followers: number;
   popularity: number;
   images: SpotifyImage[];

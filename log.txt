@@ -28,3 +28,6 @@
 - Fixed local-development session cookies so auth can work over plain HTTP on 127.0.0.1 while still staying secure in production.
 - Added a live Spotify profile loader with refresh-token handling, Supabase cache reads and writes, and automatic fallback to the demo profile when no valid session exists.
 - Updated the dashboard to use the active profile instead of the seeded profile only, and updated the share route so it can render cached real user snapshots.
+- Added better Spotify callback diagnostics so auth failures expose the underlying token-exchange or profile-fetch error instead of collapsing into a generic callback error.
+- Hardened Spotify profile normalization to tolerate missing nested fields and sparse artist metadata without crashing the callback or dashboard.
+- Added a second-step artist enrichment fetch using Spotify's artists endpoint so genres, followers, and popularity can be populated even when the top-artists endpoint returns thin artist objects.

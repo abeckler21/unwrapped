@@ -208,7 +208,7 @@ export default async function DashboardPage() {
                   <div>
                     <p className="text-lg font-medium text-[var(--text-strong)]">{artist.name}</p>
                     <p className="text-sm text-[var(--text-muted)]">
-                      {artist.genres.slice(0, 2).join(" · ")}
+                      {(artist.genres?.length ? artist.genres.slice(0, 2) : ["unknown genre"]).join(" · ")}
                     </p>
                   </div>
                 </div>

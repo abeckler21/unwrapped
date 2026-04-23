@@ -65,7 +65,7 @@ function buildGenreDistribution(artists: SpotifyArtist[]) {
 
   artists.forEach((artist, index) => {
     const weight = getRankWeight(index, totalArtists);
-    const genres = artist.genres.length ? artist.genres : ["unknown"];
+    const genres = artist.genres?.length ? artist.genres : ["unknown"];
 
     genres.forEach((genre) => {
       genreWeights.set(genre, (genreWeights.get(genre) ?? 0) + weight / genres.length);

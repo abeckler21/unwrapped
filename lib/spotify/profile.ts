@@ -5,7 +5,7 @@ type SpotifyUserResponse = {
   id: string;
   display_name: string | null;
   country: string | null;
-  followers: {
+  followers?: {
     total: number;
   };
 };
@@ -13,8 +13,8 @@ type SpotifyUserResponse = {
 type SpotifyArtistResponse = {
   id: string;
   name: string;
-  genres: string[];
-  followers: {
+  genres?: string[];
+  followers?: {
     total: number;
   };
   popularity: number;
@@ -23,6 +23,10 @@ type SpotifyArtistResponse = {
     width: number;
     height: number;
   }>;
+};
+
+type SpotifySeveralArtistsResponse = {
+  artists: SpotifyArtistResponse[];
 };
 
 type SpotifyTrackResponse = {
@@ -48,10 +52,10 @@ type SpotifyPlaylistResponse = {
   id: string;
   name: string;
   owner: {
-    display_name: string;
+    display_name: string | null;
   };
   collaborative: boolean;
-  tracks: {
+  tracks?: {
     total: number;
   };
 };
@@ -61,7 +65,7 @@ type SpotifyRecentlyPlayedResponse = {
     id: string;
     name: string;
     artists: Array<{ name: string }>;
-  };
+  } | null;
   played_at: string;
   context: {
     type: string;
@@ -89,6 +93,37 @@ export async function fetchCurrentSpotifyUser(accessToken: string) {
   return spotifyFetch<SpotifyUserResponse>("/me", accessToken);
 }
 
+async function enrichArtists(artists: SpotifyArtistResponse[], accessToken: string) {
+  const artistIds = [...new Set(artists.map((artist) => artist.id).filter(Boolean))];
+
+  if (!artistIds.length) {
+    return artists;
+  }
+
+  const response = await spotifyFetch<SpotifySeveralArtistsResponse>(
+    `/artists?ids=${artistIds.join(",")}`,
+    accessToken,
+  );
+
+  const enrichedById = new Map(response.artists.map((artist) => [artist.id, artist]));
+
+  return artists.map((artist) => {
+    const enriched = enrichedById.get(artist.id);
+
+    if (!enriched) {
+      return artist;
+    }
+
+    return {
+      ...artist,
+      genres: enriched.genres ?? artist.genres ?? [],
+      followers: enriched.followers ?? artist.followers,
+      popularity: enriched.popularity ?? artist.popularity,
+      images: enriched.images?.length ? enriched.images : artist.images,
+    };
+  });
+}
+
 export async function fetchSpotifyProfile(accessToken: string): Promise<SpotifyProfile> {
   const [user, shortArtists, mediumArtists, longArtists, shortTracks, mediumTracks, longTracks, playlists, recentlyPlayed, savedTracks] =
     await Promise.all([
@@ -104,13 +139,19 @@ export async function fetchSpotifyProfile(accessToken: string): Promise<SpotifyP
       spotifyFetch<{ total: number }>("/me/tracks?limit=1", accessToken),
     ]);
 
+  const [enrichedShortArtists, enrichedMediumArtists, enrichedLongArtists] = await Promise.all([
+    enrichArtists(shortArtists.items, accessToken),
+    enrichArtists(mediumArtists.items, accessToken),
+    enrichArtists(longArtists.items, accessToken),
+  ]);
+
   const mapArtist = (artist: SpotifyArtistResponse) => ({
     id: artist.id,
     name: artist.name,
-    genres: artist.genres,
-    followers: artist.followers.total,
-    popularity: artist.popularity,
-    images: artist.images,
+    genres: artist.genres ?? [],
+    followers: artist.followers?.total ?? 0,
+    popularity: artist.popularity ?? 0,
+    images: artist.images ?? [],
   });
 
   const mapTrack = (track: SpotifyTrackResponse) => ({
@@ -121,10 +162,10 @@ export async function fetchSpotifyProfile(accessToken: string): Promise<SpotifyP
       id: track.album.id,
       name: track.album.name,
       releaseDate: track.album.release_date,
-      images: track.album.images,
+      images: track.album.images ?? [],
     },
     durationMs: track.duration_ms,
-    popularity: track.popularity,
+    popularity: track.popularity ?? 0,
     explicit: track.explicit,
   });
 
@@ -133,34 +174,36 @@ export async function fetchSpotifyProfile(accessToken: string): Promise<SpotifyP
     spotifyId: user.id,
     displayName: user.display_name ?? "Spotify User",
     market: user.country ?? "unknown",
-    followers: user.followers.total,
+    followers: user.followers?.total ?? 0,
     fetchedFromCache: false,
-    savedTrackCount: savedTracks.total,
+    savedTrackCount: savedTracks.total ?? 0,
     playlists: playlists.items.map((playlist) => ({
       id: playlist.id,
       name: playlist.name,
-      ownerName: playlist.owner.display_name,
+      ownerName: playlist.owner.display_name ?? "Unknown owner",
       collaborative: playlist.collaborative,
-      trackCount: playlist.tracks.total,
+      trackCount: playlist.tracks?.total ?? 0,
     })),
-    recentlyPlayed: recentlyPlayed.items.map((item) => ({
-      id: item.track.id,
-      name: item.track.name,
-      artistName: item.track.artists.map((artist) => artist.name).join(", "),
+    recentlyPlayed: recentlyPlayed.items
+      .filter((item) => item.track !== null)
+      .map((item) => ({
+      id: item.track!.id,
+      name: item.track!.name,
+      artistName: item.track!.artists.map((artist) => artist.name).join(", "),
       playedAt: item.played_at,
       contextName: item.context?.type,
     })),
     timeRanges: {
       short_term: {
-        topArtists: shortArtists.items.map(mapArtist),
+        topArtists: enrichedShortArtists.map(mapArtist),
         topTracks: shortTracks.items.map(mapTrack),
       },
       medium_term: {
-        topArtists: mediumArtists.items.map(mapArtist),
+        topArtists: enrichedMediumArtists.map(mapArtist),
         topTracks: mediumTracks.items.map(mapTrack),
       },
       long_term: {
-        topArtists: longArtists.items.map(mapArtist),
+        topArtists: enrichedLongArtists.map(mapArtist),
         topTracks: longTracks.items.map(mapTrack),
       },
     },
