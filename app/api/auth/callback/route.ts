@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { readCachedSpotifyProfile, writeCachedSpotifyProfile } from "@/lib/cache/spotify-profile-cache";
 import { env, hasSpotifyEnv } from "@/lib/env";
+import { getErrorMessage, toQuerySafeErrorDetail } from "@/lib/errors";
 import { exchangeAuthorizationCode } from "@/lib/spotify/auth";
 import { fetchCurrentSpotifyUser, fetchSpotifyProfile } from "@/lib/spotify/profile";
 import {
@@ -55,9 +56,15 @@ export async function GET(request: NextRequest) {
     await clearOAuthCookies();
 
     return NextResponse.redirect(new URL("/dashboard", env.NEXT_PUBLIC_BASE_URL));
-  } catch {
+  } catch (error) {
     await clearOAuthCookies();
     await clearSpotifySessionCookies();
-    return NextResponse.redirect(new URL("/setup?spotify_error=callback_failed", env.NEXT_PUBLIC_BASE_URL));
+    const detail = toQuerySafeErrorDetail(getErrorMessage(error));
+    return NextResponse.redirect(
+      new URL(
+        `/setup?spotify_error=callback_failed&detail=${encodeURIComponent(detail)}`,
+        env.NEXT_PUBLIC_BASE_URL,
+      ),
+    );
   }
 }

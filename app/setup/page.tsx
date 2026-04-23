@@ -22,6 +22,7 @@ export default async function SetupPage({
   const params = await searchParams;
   const spotifyError =
     typeof params.spotify_error === "string" ? params.spotify_error : undefined;
+  const detail = typeof params.detail === "string" ? params.detail : undefined;
   const missing = getMissingSetupItems();
 
   return (
@@ -36,6 +37,7 @@ export default async function SetupPage({
         {spotifyError ? (
           <div className="mt-6 rounded-[24px] border border-orange-400/30 bg-orange-500/10 p-4 text-sm text-orange-100">
             Spotify auth returned <strong>{spotifyError}</strong>. Most likely causes are a mismatched redirect URI, missing client credentials, or an expired PKCE state cookie.
+            {detail ? <p className="mt-3 break-words text-orange-50/90">Detail: {detail}</p> : null}
           </div>
         ) : null}
 

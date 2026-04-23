@@ -83,7 +83,8 @@ export async function exchangeAuthorizationCode(code: string, verifier: string) 
   });
 
   if (!response.ok) {
-    throw new Error(`Spotify token exchange failed with status ${response.status}.`);
+    const detail = await response.text();
+    throw new Error(`Spotify token exchange failed (${response.status}): ${detail}`);
   }
 
   return (await response.json()) as SpotifyTokenResponse;
@@ -110,7 +111,8 @@ export async function refreshSpotifyAccessToken(refreshToken: string) {
   });
 
   if (!response.ok) {
-    throw new Error(`Spotify token refresh failed with status ${response.status}.`);
+    const detail = await response.text();
+    throw new Error(`Spotify token refresh failed (${response.status}): ${detail}`);
   }
 
   return (await response.json()) as SpotifyTokenResponse;

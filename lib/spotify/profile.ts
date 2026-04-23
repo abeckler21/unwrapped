@@ -78,7 +78,8 @@ async function spotifyFetch<T>(path: string, accessToken: string) {
   });
 
   if (!response.ok) {
-    throw new Error(`Spotify API request failed for ${path} with status ${response.status}.`);
+    const detail = await response.text();
+    throw new Error(`Spotify API request failed for ${path} (${response.status}): ${detail}`);
   }
 
   return (await response.json()) as T;
