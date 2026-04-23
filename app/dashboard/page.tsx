@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 import { GenreDistributionChart } from "@/components/visualizations/genre-distribution-chart";
 import { MacroTrendChart } from "@/components/visualizations/macro-trend-chart";
@@ -12,7 +13,8 @@ import {
 import { formatDuration, formatNumber, formatPercent } from "@/lib/format";
 import { getCurrentSpotifyProfile } from "@/lib/spotify/current-profile";
 export default async function DashboardPage() {
-  const { profile, usingDemoData, isAuthenticated } = await getCurrentSpotifyProfile();
+  const { profile, usingDemoData, isAuthenticated, needsReconnect } =
+    await getCurrentSpotifyProfile();
   const score = computeBubbleScore(profile, "medium_term");
   const shareHref = usingDemoData ? "/share/demo-user" : `/share/${profile.userId}`;
 
@@ -26,7 +28,9 @@ export default async function DashboardPage() {
           </h2>
           <p className="mt-2 text-sm leading-7 text-[var(--text-muted)]">
             {usingDemoData
-              ? "You are viewing the seeded fallback profile. Use Spotify login once your app and Supabase project are fully configured."
+              ? needsReconnect
+                ? "Your Spotify session needs to be refreshed. Log in again to reload live data; until then, the dashboard is showing the seeded fallback profile."
+                : "You are viewing the seeded fallback profile. Use Spotify login once your app and Supabase project are fully configured."
               : profile.fetchedFromCache
                 ? "This dashboard loaded from the 24-hour Supabase cache instead of hitting Spotify again."
                 : "This dashboard loaded directly from Spotify and refreshed the cache."}
@@ -137,12 +141,25 @@ export default async function DashboardPage() {
           <div className="grid gap-3">
             <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
               <p className="text-sm text-[var(--text-muted)]">Top genre share</p>
-              <p className="mt-2 text-3xl font-semibold text-[var(--text-strong)]">
-                {formatPercent(score.primaryGenre.share)}
-              </p>
-              <p className="mt-1 text-sm text-[var(--text-soft)]">
-                {score.primaryGenre.name} dominates your medium-term profile.
-              </p>
+              {score.hasGenreMetadata ? (
+                <>
+                  <p className="mt-2 text-3xl font-semibold text-[var(--text-strong)]">
+                    {formatPercent(score.primaryGenre.share)}
+                  </p>
+                  <p className="mt-1 text-sm text-[var(--text-soft)]">
+                    {score.primaryGenre.name} dominates your medium-term profile.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="mt-2 text-3xl font-semibold text-[var(--text-strong)]">
+                    Unavailable
+                  </p>
+                  <p className="mt-1 text-sm text-[var(--text-soft)]">
+                    Spotify did not return genre metadata for these top artists.
+                  </p>
+                </>
+              )}
             </div>
 
             <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
@@ -176,20 +193,26 @@ export default async function DashboardPage() {
               <h2 className="text-2xl font-semibold text-[var(--text-strong)]">Your taste clusters hard</h2>
             </div>
           </div>
-          <div className="mt-6 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-            <GenreDistributionChart data={score.genreDistribution} />
-            <div className="space-y-3">
-              {score.genreDistribution.slice(0, 8).map((genre) => (
-                <div
-                  key={genre.genre}
-                  className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3"
-                >
-                  <span className="capitalize text-[var(--text-strong)]">{genre.genre}</span>
-                  <span className="font-medium text-[var(--text-soft)]">{formatPercent(genre.share)}</span>
-                </div>
-              ))}
+          {score.hasGenreMetadata ? (
+            <div className="mt-6 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+              <GenreDistributionChart data={score.genreDistribution} />
+              <div className="space-y-3">
+                {score.genreDistribution.slice(0, 8).map((genre) => (
+                  <div
+                    key={genre.genre}
+                    className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3"
+                  >
+                    <span className="capitalize text-[var(--text-strong)]">{genre.genre}</span>
+                    <span className="font-medium text-[var(--text-soft)]">{formatPercent(genre.share)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="mt-6 rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm leading-7 text-[var(--text-muted)]">
+              Spotify returned your top artists, but not their genre metadata. The dashboard can still show artists, tracks, durations, and listening patterns, but this v1 genre chart is unavailable for your account until Spotify exposes those fields.
+            </div>
+          )}
         </article>
 
         <article className="panel">
@@ -202,21 +225,36 @@ export default async function DashboardPage() {
                 className="flex items-center justify-between gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] px-4 py-4"
               >
                 <div className="flex items-center gap-4">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-sm text-[var(--text-muted)]">
-                    {String(index + 1).padStart(2, "0")}
+                  <div className="relative h-12 w-12 overflow-hidden rounded-full border border-white/10 bg-white/[0.06]">
+                    {artist.images[0]?.url ? (
+                      <Image
+                        src={artist.images[0].url}
+                        alt={artist.name}
+                        fill
+                        sizes="48px"
+                        className="object-cover"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-sm text-[var(--text-muted)]">
+                        {String(index + 1).padStart(2, "0")}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <p className="text-lg font-medium text-[var(--text-strong)]">{artist.name}</p>
                     <p className="text-sm text-[var(--text-muted)]">
-                      {(artist.genres?.length ? artist.genres.slice(0, 2) : ["unknown genre"]).join(" · ")}
+                      {(artist.genres?.length ? artist.genres.slice(0, 2) : ["genre unavailable"]).join(" · ")}
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-[var(--text-muted)]">
-                    {formatNumber(artist.followers)} followers
+                    {artist.followers > 0 ? `${formatNumber(artist.followers)} followers` : "followers unavailable"}
                   </p>
-                  <p className="text-sm text-[var(--text-soft)]">Popularity {artist.popularity}</p>
+                  <p className="text-sm text-[var(--text-soft)]">
+                    {artist.popularity > 0 ? `Popularity ${artist.popularity}` : "popularity unavailable"}
+                  </p>
                 </div>
               </div>
             ))}

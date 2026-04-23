@@ -100,28 +100,32 @@ async function enrichArtists(artists: SpotifyArtistResponse[], accessToken: stri
     return artists;
   }
 
-  const response = await spotifyFetch<SpotifySeveralArtistsResponse>(
-    `/artists?ids=${artistIds.join(",")}`,
-    accessToken,
-  );
+  try {
+    const response = await spotifyFetch<SpotifySeveralArtistsResponse>(
+      `/artists?ids=${artistIds.join(",")}`,
+      accessToken,
+    );
 
-  const enrichedById = new Map(response.artists.map((artist) => [artist.id, artist]));
+    const enrichedById = new Map(response.artists.map((artist) => [artist.id, artist]));
 
-  return artists.map((artist) => {
-    const enriched = enrichedById.get(artist.id);
+    return artists.map((artist) => {
+      const enriched = enrichedById.get(artist.id);
 
-    if (!enriched) {
-      return artist;
-    }
+      if (!enriched) {
+        return artist;
+      }
 
-    return {
-      ...artist,
-      genres: enriched.genres ?? artist.genres ?? [],
-      followers: enriched.followers ?? artist.followers,
-      popularity: enriched.popularity ?? artist.popularity,
-      images: enriched.images?.length ? enriched.images : artist.images,
-    };
-  });
+      return {
+        ...artist,
+        genres: enriched.genres ?? artist.genres ?? [],
+        followers: enriched.followers ?? artist.followers,
+        popularity: enriched.popularity ?? artist.popularity,
+        images: enriched.images?.length ? enriched.images : artist.images,
+      };
+    });
+  } catch {
+    return artists;
+  }
 }
 
 export async function fetchSpotifyProfile(accessToken: string): Promise<SpotifyProfile> {

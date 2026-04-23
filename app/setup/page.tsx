@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { getMissingSetupItems, hasSpotifyEnv, hasSupabaseEnv } from "@/lib/env";
+import { getMissingSetupItems, hasLastFmEnv, hasSpotifyEnv, hasSupabaseEnv } from "@/lib/env";
 
 const spotifySteps = [
   "Create a Spotify app in the Spotify developer dashboard.",
@@ -12,6 +12,12 @@ const supabaseSteps = [
   "Create a new Supabase project.",
   "Copy the project URL, anon key, and service role key into .env.local.",
   "Run the migration in supabase/migrations to create the cache tables.",
+];
+
+const lastFmSteps = [
+  "Create a Last.fm API account and generate an API key.",
+  "Add LASTFM_API_KEY to .env.local.",
+  "Run the 002_lastfm_artist_tags_cache.sql migration so artist-tag caching is available.",
 ];
 
 export default async function SetupPage({
@@ -65,6 +71,25 @@ export default async function SetupPage({
             </div>
             <ol className="mt-5 space-y-3 text-sm leading-7 text-[var(--text-soft)]">
               {supabaseSteps.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+          </article>
+        </div>
+
+        <div className="mt-4">
+          <article className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-2xl font-semibold text-[var(--text-strong)]">Last.fm</h2>
+              <span className="rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                {hasLastFmEnv() ? "Configured" : "Optional"}
+              </span>
+            </div>
+            <p className="mt-3 text-sm leading-7 text-[var(--text-muted)]">
+              We use Last.fm only to enrich artist tags when Spotify withholds genre metadata. The app still works without it, but genre-based v1 analysis will be weaker.
+            </p>
+            <ol className="mt-5 space-y-3 text-sm leading-7 text-[var(--text-soft)]">
+              {lastFmSteps.map((step) => (
                 <li key={step}>{step}</li>
               ))}
             </ol>

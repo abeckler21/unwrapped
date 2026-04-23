@@ -1,12 +1,8 @@
 import { readCachedSpotifyProfile, writeCachedSpotifyProfile } from "@/lib/cache/spotify-profile-cache";
 import { mockProfile } from "@/lib/data/mock-profile";
-import { refreshSpotifyAccessToken } from "@/lib/spotify/auth";
+import { enrichProfileWithLastFmGenres } from "@/lib/lastfm/enrich-profile";
 import { fetchSpotifyProfile } from "@/lib/spotify/profile";
-import {
-  clearSpotifySessionCookies,
-  getSpotifySession,
-  setSpotifySessionCookies,
-} from "@/lib/spotify/session";
+import { getSpotifySession } from "@/lib/spotify/session";
 import { SpotifyProfile } from "@/lib/types/spotify";
 
 function isTokenExpired(expiresAt?: string) {
@@ -27,6 +23,7 @@ export async function getCurrentSpotifyProfile(): Promise<{
   profile: SpotifyProfile;
   usingDemoData: boolean;
   isAuthenticated: boolean;
+  needsReconnect: boolean;
 }> {
   const session = await getSpotifySession();
 
@@ -35,59 +32,51 @@ export async function getCurrentSpotifyProfile(): Promise<{
       profile: mockProfile,
       usingDemoData: true,
       isAuthenticated: false,
+      needsReconnect: false,
     };
   }
 
   try {
-    let accessToken = session.accessToken;
-    let refreshToken = session.refreshToken;
+    const accessToken = session.accessToken;
 
     if (!accessToken || isTokenExpired(session.tokenExpiresAt)) {
-      if (!refreshToken) {
-        throw new Error("Spotify refresh token is missing.");
-      }
-
-      const refreshed = await refreshSpotifyAccessToken(refreshToken);
-      accessToken = refreshed.access_token;
-      refreshToken = refreshed.refresh_token ?? refreshToken;
-
-      await setSpotifySessionCookies({
-        accessToken,
-        refreshToken,
-        expiresInSeconds: refreshed.expires_in,
-        spotifyUserId: session.spotifyUserId,
-      });
+      return {
+        profile: mockProfile,
+        usingDemoData: true,
+        isAuthenticated: false,
+        needsReconnect: true,
+      };
     }
 
     const cachedProfile = await readCachedSpotifyProfile(session.spotifyUserId);
 
     if (cachedProfile) {
+      const enrichedCachedProfile = await enrichProfileWithLastFmGenres(cachedProfile);
+
       return {
-        profile: cachedProfile,
+        profile: enrichedCachedProfile,
         usingDemoData: false,
         isAuthenticated: true,
+        needsReconnect: false,
       };
-    }
-
-    if (!accessToken) {
-      throw new Error("Spotify access token is missing.");
     }
 
     const profile = await fetchSpotifyProfile(accessToken);
     await writeCachedSpotifyProfile(session.spotifyUserId, profile);
+    const enrichedProfile = await enrichProfileWithLastFmGenres(profile);
 
     return {
-      profile,
+      profile: enrichedProfile,
       usingDemoData: false,
       isAuthenticated: true,
+      needsReconnect: false,
     };
   } catch {
-    await clearSpotifySessionCookies();
-
     return {
       profile: mockProfile,
       usingDemoData: true,
       isAuthenticated: false,
+      needsReconnect: true,
     };
   }
 }

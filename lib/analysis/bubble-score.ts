@@ -23,6 +23,7 @@ export type BubbleScoreResult = {
   tier: ScoreTier;
   organicRatio: number;
   algorithmicRatio: number;
+  hasGenreMetadata: boolean;
   primaryGenre: {
     name: string;
     share: number;
@@ -65,7 +66,11 @@ function buildGenreDistribution(artists: SpotifyArtist[]) {
 
   artists.forEach((artist, index) => {
     const weight = getRankWeight(index, totalArtists);
-    const genres = artist.genres?.length ? artist.genres : ["unknown"];
+    const genres = artist.genres?.filter(Boolean) ?? [];
+
+    if (!genres.length) {
+      return;
+    }
 
     genres.forEach((genre) => {
       genreWeights.set(genre, (genreWeights.get(genre) ?? 0) + weight / genres.length);
@@ -84,10 +89,20 @@ function buildGenreDistribution(artists: SpotifyArtist[]) {
 
 function computeGenreConcentrationScore(artists: SpotifyArtist[]) {
   const distribution = buildGenreDistribution(artists);
+
+  if (!distribution.length) {
+    return {
+      score: 0,
+      distribution,
+      hasGenreMetadata: false,
+    };
+  }
+
   const hhi = distribution.reduce((sum, item) => sum + item.share * item.share, 0);
   return {
     score: normalizeToPercent(hhi),
     distribution,
+    hasGenreMetadata: true,
   };
 }
 
@@ -226,8 +241,9 @@ export function computeBubbleScore(
     tier: getScoreTier(score),
     organicRatio: listeningSplit.organicRatio,
     algorithmicRatio: listeningSplit.algorithmicRatio,
+    hasGenreMetadata: genreConcentration.hasGenreMetadata,
     primaryGenre: {
-      name: primaryGenre.genre,
+      name: genreConcentration.hasGenreMetadata ? primaryGenre.genre : "Unavailable",
       share: round(primaryGenre.share * 100),
     },
     averageTrackDurationMs: getAverageTrackDurationMs(selectedRange.topTracks),
@@ -241,8 +257,9 @@ export function computeBubbleScore(
         label: "Genre concentration",
         score: genreConcentration.score,
         weight: SCORE_WEIGHTS.genreConcentration,
-        explanation:
-          "We weight your artist genres by rank, then measure how concentrated that spread is. A monoculture scores higher.",
+        explanation: genreConcentration.hasGenreMetadata
+          ? "We weight your artist genres by rank, then measure how concentrated that spread is. A monoculture scores higher."
+          : "Spotify did not provide usable genre metadata for your top artists, so this part of the score is currently unavailable.",
       },
       {
         key: "artistRepetition",

@@ -31,3 +31,6 @@
 - Added better Spotify callback diagnostics so auth failures expose the underlying token-exchange or profile-fetch error instead of collapsing into a generic callback error.
 - Hardened Spotify profile normalization to tolerate missing nested fields and sparse artist metadata without crashing the callback or dashboard.
 - Added a second-step artist enrichment fetch using Spotify's artists endpoint so genres, followers, and popularity can be populated even when the top-artists endpoint returns thin artist objects.
+- Confirmed through a debug route that Spotify's top-artists response for this app/user path returns only thin artist objects and that the follow-up artist enrichment endpoint responds with 403 Forbidden.
+- Updated the dashboard to present missing Spotify artist metadata honestly instead of showing misleading zeros or synthetic unknown-genre claims.
+- Added an optional Last.fm enrichment layer, API key configuration, and a dedicated Supabase cache migration so genre-based analysis can recover using cached Last.fm top tags when Spotify withholds artist genres.
