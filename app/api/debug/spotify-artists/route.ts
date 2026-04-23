@@ -45,6 +45,13 @@ export async function GET() {
         body: string;
       }
     | undefined;
+  let singleArtistResult:
+    | {
+        ok: boolean;
+        status: number;
+        body: string;
+      }
+    | undefined;
 
   if (topArtistsResult.ok) {
     const parsed = JSON.parse(topArtistsResult.body) as {
@@ -54,11 +61,13 @@ export async function GET() {
 
     if (ids.length) {
       enrichResult = await spotifyFetch(`/artists?ids=${ids.join(",")}`, session.accessToken);
+      singleArtistResult = await spotifyFetch(`/artists/${ids[0]}`, session.accessToken);
     }
   }
 
   return NextResponse.json({
     topArtists: topArtistsResult,
     enrichedArtists: enrichResult ?? null,
+    singleArtist: singleArtistResult ?? null,
   });
 }

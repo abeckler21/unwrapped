@@ -1,8 +1,8 @@
 "use client";
 
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { Cell, Pie, PieChart, Tooltip } from "recharts";
 
-import { useIsClient } from "@/lib/use-is-client";
+import { ChartFrame } from "@/components/visualizations/chart-frame";
 
 type GenreDistributionChartProps = {
   data: Array<{
@@ -23,23 +23,20 @@ const COLORS = [
 ];
 
 export function GenreDistributionChart({ data }: GenreDistributionChartProps) {
-  const isClient = useIsClient();
   const chartData = data.slice(0, 8);
 
-  if (!isClient) {
-    return <div className="h-72 w-full rounded-[24px] border border-white/10 bg-white/[0.03]" />;
-  }
-
   return (
-    <div className="h-72 w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
+    <ChartFrame>
+      {({ width, height }) => (
+        <PieChart width={width} height={height}>
           <Pie
             data={chartData}
             dataKey="share"
             nameKey="genre"
-            innerRadius={70}
-            outerRadius={110}
+            cx="50%"
+            cy="50%"
+            innerRadius={Math.min(width, height) * 0.19}
+            outerRadius={Math.min(width, height) * 0.34}
             paddingAngle={2}
           >
             {chartData.map((entry, index) => (
@@ -56,7 +53,7 @@ export function GenreDistributionChart({ data }: GenreDistributionChartProps) {
             formatter={(value) => `${Number(value ?? 0)}%`}
           />
         </PieChart>
-      </ResponsiveContainer>
-    </div>
+      )}
+    </ChartFrame>
   );
 }

@@ -218,42 +218,36 @@ export default async function DashboardPage() {
         <article className="panel">
           <p className="eyebrow">Top artists</p>
           <h2 className="text-2xl font-semibold text-[var(--text-strong)]">The people you keep returning to</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--text-muted)]">
+            Ranked from your Spotify top artists and genre-tagged via Last.fm when Spotify withholds artist metadata.
+          </p>
           <div className="mt-6 space-y-3">
             {profile.timeRanges.medium_term.topArtists.map((artist, index) => (
               <div
                 key={artist.id}
-                className="flex items-center justify-between gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] px-4 py-4"
+                className="flex items-center gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] px-4 py-4"
               >
-                <div className="flex items-center gap-4">
-                  <div className="relative h-12 w-12 overflow-hidden rounded-full border border-white/10 bg-white/[0.06]">
-                    {artist.images[0]?.url ? (
-                      <Image
-                        src={artist.images[0].url}
-                        alt={artist.name}
-                        fill
-                        sizes="48px"
-                        className="object-cover"
-                        unoptimized
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-sm text-[var(--text-muted)]">
-                        {String(index + 1).padStart(2, "0")}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-lg font-medium text-[var(--text-strong)]">{artist.name}</p>
-                    <p className="text-sm text-[var(--text-muted)]">
-                      {(artist.genres?.length ? artist.genres.slice(0, 2) : ["genre unavailable"]).join(" · ")}
-                    </p>
-                  </div>
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-sm text-[var(--text-muted)]">
+                  {String(index + 1).padStart(2, "0")}
                 </div>
-                <div className="text-right">
+
+                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border border-white/10 bg-white/[0.06]">
+                  {artist.images[0]?.url ? (
+                    <Image
+                      src={artist.images[0].url}
+                      alt={artist.name}
+                      fill
+                      sizes="56px"
+                      className="object-cover"
+                      unoptimized
+                    />
+                  ) : null}
+                </div>
+
+                <div className="min-w-0">
+                  <p className="text-lg font-medium text-[var(--text-strong)]">{artist.name}</p>
                   <p className="text-sm text-[var(--text-muted)]">
-                    {artist.followers > 0 ? `${formatNumber(artist.followers)} followers` : "followers unavailable"}
-                  </p>
-                  <p className="text-sm text-[var(--text-soft)]">
-                    {artist.popularity > 0 ? `Popularity ${artist.popularity}` : "popularity unavailable"}
+                    {(artist.genres?.length ? artist.genres.slice(0, 2) : ["genre unavailable"]).join(" · ")}
                   </p>
                 </div>
               </div>
@@ -275,12 +269,23 @@ export default async function DashboardPage() {
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           {profile.timeRanges.medium_term.topTracks.map((track) => (
             <article key={track.id} className="rounded-[26px] border border-white/10 bg-white/[0.03] p-4">
-              <div className="aspect-square rounded-[20px] bg-[linear-gradient(135deg,rgba(249,115,22,0.4),rgba(56,189,248,0.16))]" />
+              <div className="relative aspect-square overflow-hidden rounded-[20px] border border-white/10 bg-[linear-gradient(135deg,rgba(249,115,22,0.4),rgba(56,189,248,0.16))]">
+                {track.album.images[0]?.url ? (
+                  <Image
+                    src={track.album.images[0].url}
+                    alt={`${track.album.name} album cover`}
+                    fill
+                    sizes="(min-width: 1280px) 220px, (min-width: 768px) 40vw, 90vw"
+                    className="object-cover"
+                    unoptimized
+                  />
+                ) : null}
+              </div>
               <h3 className="mt-4 text-lg font-medium text-[var(--text-strong)]">{track.name}</h3>
               <p className="mt-1 text-sm text-[var(--text-muted)]">{track.artists.join(", ")}</p>
               <div className="mt-4 flex items-center justify-between text-sm text-[var(--text-soft)]">
                 <span>{formatDuration(track.durationMs)}</span>
-                <span>Popularity {track.popularity}</span>
+                <span>{track.popularity > 0 ? `Popularity ${track.popularity}` : "Popularity unavailable"}</span>
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
                 <div

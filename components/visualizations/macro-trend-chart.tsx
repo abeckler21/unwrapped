@@ -9,13 +9,12 @@ import {
   Legend,
   Line,
   LineChart,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 
-import { useIsClient } from "@/lib/use-is-client";
+import { ChartFrame } from "@/components/visualizations/chart-frame";
 
 type MacroTrendChartProps = {
   type: "area" | "line" | "stacked-bar";
@@ -43,82 +42,78 @@ export function MacroTrendChart({
   yKeys,
   yAxisLabel,
 }: MacroTrendChartProps) {
-  const isClient = useIsClient();
-
-  if (!isClient) {
-    return <div className="h-72 w-full rounded-[24px] border border-white/10 bg-white/[0.03]" />;
-  }
-
   return (
-    <div className="h-72 w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        {type === "area" ? (
-          <AreaChart data={data}>
-            <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-            <XAxis dataKey={xKey} stroke="rgba(244,241,234,0.55)" tickLine={false} />
-            <YAxis
-              stroke="rgba(244,241,234,0.55)"
-              tickLine={false}
-              axisLine={false}
-              label={yAxisLabel ? { value: yAxisLabel, angle: -90, position: "insideLeft" } : undefined}
-            />
-            <Tooltip contentStyle={tooltipStyle} />
-            {yKeys.map((series) => (
-              <Area
-                key={series.key}
-                type="monotone"
-                dataKey={series.key}
-                stroke={series.color}
-                fill={series.color}
-                fillOpacity={0.3}
-                strokeWidth={2}
+    <ChartFrame>
+      {({ width, height }) => (
+        <>
+          {type === "area" ? (
+            <AreaChart width={width} height={height} data={data}>
+              <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+              <XAxis dataKey={xKey} stroke="rgba(244,241,234,0.55)" tickLine={false} />
+              <YAxis
+                stroke="rgba(244,241,234,0.55)"
+                tickLine={false}
+                axisLine={false}
+                label={yAxisLabel ? { value: yAxisLabel, angle: -90, position: "insideLeft" } : undefined}
               />
-            ))}
-          </AreaChart>
-        ) : null}
+              <Tooltip contentStyle={tooltipStyle} />
+              {yKeys.map((series) => (
+                <Area
+                  key={series.key}
+                  type="monotone"
+                  dataKey={series.key}
+                  stroke={series.color}
+                  fill={series.color}
+                  fillOpacity={0.3}
+                  strokeWidth={2}
+                />
+              ))}
+            </AreaChart>
+          ) : null}
 
-        {type === "line" ? (
-          <LineChart data={data}>
-            <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-            <XAxis dataKey={xKey} stroke="rgba(244,241,234,0.55)" tickLine={false} />
-            <YAxis
-              stroke="rgba(244,241,234,0.55)"
-              tickLine={false}
-              axisLine={false}
-              label={yAxisLabel ? { value: yAxisLabel, angle: -90, position: "insideLeft" } : undefined}
-            />
-            <Tooltip contentStyle={tooltipStyle} />
-            {yKeys.map((series) => (
-              <Line
-                key={series.key}
-                type="monotone"
-                dataKey={series.key}
-                stroke={series.color}
-                strokeWidth={3}
-                dot={{ r: 3 }}
+          {type === "line" ? (
+            <LineChart width={width} height={height} data={data}>
+              <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+              <XAxis dataKey={xKey} stroke="rgba(244,241,234,0.55)" tickLine={false} />
+              <YAxis
+                stroke="rgba(244,241,234,0.55)"
+                tickLine={false}
+                axisLine={false}
+                label={yAxisLabel ? { value: yAxisLabel, angle: -90, position: "insideLeft" } : undefined}
               />
-            ))}
-          </LineChart>
-        ) : null}
+              <Tooltip contentStyle={tooltipStyle} />
+              {yKeys.map((series) => (
+                <Line
+                  key={series.key}
+                  type="monotone"
+                  dataKey={series.key}
+                  stroke={series.color}
+                  strokeWidth={3}
+                  dot={{ r: 3 }}
+                />
+              ))}
+            </LineChart>
+          ) : null}
 
-        {type === "stacked-bar" ? (
-          <BarChart data={data}>
-            <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-            <XAxis dataKey={xKey} stroke="rgba(244,241,234,0.55)" tickLine={false} />
-            <YAxis
-              stroke="rgba(244,241,234,0.55)"
-              tickLine={false}
-              axisLine={false}
-              label={yAxisLabel ? { value: yAxisLabel, angle: -90, position: "insideLeft" } : undefined}
-            />
-            <Tooltip contentStyle={tooltipStyle} />
-            <Legend />
-            {yKeys.map((series) => (
-              <Bar key={series.key} dataKey={series.key} stackId="macro" fill={series.color} name={series.label} />
-            ))}
-          </BarChart>
-        ) : null}
-      </ResponsiveContainer>
-    </div>
+          {type === "stacked-bar" ? (
+            <BarChart width={width} height={height} data={data}>
+              <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+              <XAxis dataKey={xKey} stroke="rgba(244,241,234,0.55)" tickLine={false} />
+              <YAxis
+                stroke="rgba(244,241,234,0.55)"
+                tickLine={false}
+                axisLine={false}
+                label={yAxisLabel ? { value: yAxisLabel, angle: -90, position: "insideLeft" } : undefined}
+              />
+              <Tooltip contentStyle={tooltipStyle} />
+              <Legend />
+              {yKeys.map((series) => (
+                <Bar key={series.key} dataKey={series.key} stackId="macro" fill={series.color} name={series.label} />
+              ))}
+            </BarChart>
+          ) : null}
+        </>
+      )}
+    </ChartFrame>
   );
 }

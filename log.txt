@@ -34,3 +34,7 @@
 - Confirmed through a debug route that Spotify's top-artists response for this app/user path returns only thin artist objects and that the follow-up artist enrichment endpoint responds with 403 Forbidden.
 - Updated the dashboard to present missing Spotify artist metadata honestly instead of showing misleading zeros or synthetic unknown-genre claims.
 - Added an optional Last.fm enrichment layer, API key configuration, and a dedicated Supabase cache migration so genre-based analysis can recover using cached Last.fm top tags when Spotify withholds artist genres.
+- Restored real Spotify album covers in the top-tracks grid and removed misleading zero-value track popularity fallback copy.
+- Removed artist follower and popularity rows from the top-artists cards after confirming Spotify does not provide those fields reliably for this app/user path.
+- Reworked the chart components several times to eliminate Recharts container-measurement warnings while keeping the charts responsive and interactive.
+- Added a shared measured chart frame and a small element-size hook so the dashboard charts render with stable dimensions in development and production.
