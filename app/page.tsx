@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { getMissingSetupItems } from "@/lib/env";
+
 const v1Checklist = [
   "Spotify PKCE auth with secure cookies",
   "Typed Spotify profile and 24h cache layer",
@@ -9,6 +11,8 @@ const v1Checklist = [
 ];
 
 export default function Home() {
+  const missingSetupItems = getMissingSetupItems();
+
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-5 py-6 sm:px-8 lg:px-10">
       <section className="hero-grid panel panel-glow overflow-hidden">
@@ -47,6 +51,21 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {missingSetupItems.length ? (
+        <section className="panel flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="eyebrow">Current blocker</p>
+            <h2 className="text-2xl font-semibold text-[var(--text-strong)]">External services still need to be created</h2>
+            <p className="mt-2 text-sm leading-7 text-[var(--text-muted)]">
+              Missing: {missingSetupItems.join(" and ")}.
+            </p>
+          </div>
+          <Link href="/setup" className="button-primary">
+            Open setup checklist
+          </Link>
+        </section>
+      ) : null}
 
       <section className="grid gap-4 lg:grid-cols-3">
         <article className="panel">

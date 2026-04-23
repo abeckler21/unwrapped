@@ -18,3 +18,9 @@
 - Reworked the global layout and styles to match the darker visual direction described in the project docs.
 - Removed the external Google font dependency after confirming the restricted environment would block build-time font fetching.
 - Verified the new slice with linting, type-checking, and a production build, then tightened the chart components to avoid prerender-time width warnings.
+- Added environment scaffolding, setup helpers, and a committed .env example so external service wiring can happen without guesswork.
+- Added Spotify auth foundations for login, callback, logout, PKCE generation, session cookies, token exchange, and token refresh support.
+- Added Spotify profile-fetching helpers for user info, top artists, top tracks, playlists, recently played tracks, and saved-track counts.
+- Added a Supabase admin helper, profile cache interface, and an initial schema migration for cached profiles and future analysis tables.
+- Added a setup page so missing Spotify or Supabase credentials fail gracefully and explain the next required configuration steps.
+- Verified the auth and setup slice with linting, type-checking, and a production build.
