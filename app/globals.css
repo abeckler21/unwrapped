@@ -1,26 +1,144 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #09080e;
+  --background-elevated: #14131b;
+  --foreground: #f4f1ea;
+  --text-strong: #f8f3eb;
+  --text-soft: rgba(244, 241, 234, 0.82);
+  --text-muted: rgba(244, 241, 234, 0.58);
+  --accent: #f97316;
+  --accent-cool: #38bdf8;
+  --border: rgba(255, 255, 255, 0.1);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: "Avenir Next", "Trebuchet MS", "Segoe UI", sans-serif;
+  --font-mono: "SFMono-Regular", "Menlo", "Monaco", "Courier New", monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background:
+    radial-gradient(circle at top, rgba(249, 115, 22, 0.18), transparent 32%),
+    radial-gradient(circle at 85% 20%, rgba(56, 189, 248, 0.14), transparent 24%),
+    linear-gradient(180deg, #09080e 0%, #0b0f16 45%, #09080e 100%);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Avenir Next", "Trebuchet MS", "Segoe UI", sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.app-shell {
+  min-height: 100vh;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 16%),
+    linear-gradient(180deg, rgba(249, 115, 22, 0.06), transparent 42%);
+}
+
+.panel {
+  border: 1px solid var(--border);
+  border-radius: 32px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  padding: 1.4rem;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.18);
+}
+
+.panel-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.panel-glow::before {
+  content: "";
+  position: absolute;
+  inset: auto -10% 58% auto;
+  height: 220px;
+  width: 220px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(249, 115, 22, 0.22), transparent 68%);
+  pointer-events: none;
+}
+
+.button-primary,
+.button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.75rem 1.1rem;
+  font-size: 0.95rem;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.button-primary {
+  background: linear-gradient(135deg, var(--accent), #fb7185);
+  color: #110d08;
+  font-weight: 600;
+}
+
+.button-secondary {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-strong);
+}
+
+.button-primary:hover,
+.button-secondary:hover {
+  transform: translateY(-1px);
+}
+
+.eyebrow {
+  font-family: "SFMono-Regular", "Menlo", "Monaco", "Courier New", monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.hero-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .hero-grid {
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.75fr);
+    align-items: stretch;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .panel,
+  .button-primary,
+  .button-secondary {
+    animation: rise-in 420ms ease both;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

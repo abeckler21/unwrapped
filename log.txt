@@ -10,3 +10,11 @@
 - Updated git ignore rules so the temporary scaffold directory does not affect the working tree while development proceeds.
 - Installed the root project dependencies so the app can be validated from the repository root.
 - Verified the baseline type-check and adjusted the ESLint ignore configuration so temporary generated files do not cause false failures.
+- Committed the initial working scaffold baseline so v1 development can proceed in clean slices.
+- Installed the first v1 application dependencies for charts, schema validation, and Supabase integration.
+- Added typed Spotify domain models and a first-pass Filter Bubble Score implementation with genre concentration, artist repetition, popularity skew, temporal consistency, and estimated organic versus algorithmic listening ratios.
+- Added seeded profile data and seeded macro trend datasets so the v1 dashboard can be designed and validated before live Spotify credentials exist.
+- Replaced the generator landing page with an Unwrapped-specific homepage, dashboard preview, and public share preview route.
+- Reworked the global layout and styles to match the darker visual direction described in the project docs.
+- Removed the external Google font dependency after confirming the restricted environment would block build-time font fetching.
+- Verified the new slice with linting, type-checking, and a production build, then tightened the chart components to avoid prerender-time width warnings.
