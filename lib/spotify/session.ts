@@ -4,12 +4,16 @@ import { SESSION_COOKIE_NAMES } from "@/lib/spotify/constants";
 
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
 
+function getCookieSecurity() {
+  return process.env.NODE_ENV === "production";
+}
+
 export async function setOAuthCookies(state: string, verifier: string) {
   const cookieStore = await cookies();
 
   cookieStore.set(SESSION_COOKIE_NAMES.oauthState, state, {
     httpOnly: true,
-    secure: true,
+    secure: getCookieSecurity(),
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 10,
@@ -17,7 +21,7 @@ export async function setOAuthCookies(state: string, verifier: string) {
 
   cookieStore.set(SESSION_COOKIE_NAMES.pkceVerifier, verifier, {
     httpOnly: true,
-    secure: true,
+    secure: getCookieSecurity(),
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 10,
@@ -50,7 +54,7 @@ export async function setSpotifySessionCookies(params: {
 
   cookieStore.set(SESSION_COOKIE_NAMES.accessToken, params.accessToken, {
     httpOnly: true,
-    secure: true,
+    secure: getCookieSecurity(),
     sameSite: "lax",
     path: "/",
     maxAge: params.expiresInSeconds,
@@ -58,7 +62,7 @@ export async function setSpotifySessionCookies(params: {
 
   cookieStore.set(SESSION_COOKIE_NAMES.refreshToken, params.refreshToken, {
     httpOnly: true,
-    secure: true,
+    secure: getCookieSecurity(),
     sameSite: "lax",
     path: "/",
     maxAge: ONE_YEAR_SECONDS,
@@ -66,7 +70,7 @@ export async function setSpotifySessionCookies(params: {
 
   cookieStore.set(SESSION_COOKIE_NAMES.tokenExpiresAt, String(expiresAt), {
     httpOnly: true,
-    secure: true,
+    secure: getCookieSecurity(),
     sameSite: "lax",
     path: "/",
     maxAge: ONE_YEAR_SECONDS,
@@ -74,7 +78,7 @@ export async function setSpotifySessionCookies(params: {
 
   cookieStore.set(SESSION_COOKIE_NAMES.spotifyUserId, params.spotifyUserId, {
     httpOnly: true,
-    secure: true,
+    secure: getCookieSecurity(),
     sameSite: "lax",
     path: "/",
     maxAge: ONE_YEAR_SECONDS,

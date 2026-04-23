@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { computeBubbleScore } from "@/lib/analysis/bubble-score";
+import { readCachedSpotifyProfile } from "@/lib/cache/spotify-profile-cache";
 import { mockProfile } from "@/lib/data/mock-profile";
 import { formatDuration, formatPercent } from "@/lib/format";
 
@@ -14,11 +15,16 @@ type SharePageProps = {
 export default async function SharePage({ params }: SharePageProps) {
   const { userId } = await params;
 
-  if (userId !== mockProfile.userId) {
+  const profile =
+    userId === mockProfile.userId
+      ? mockProfile
+      : await readCachedSpotifyProfile(userId, { ignoreTtl: true });
+
+  if (!profile) {
     notFound();
   }
 
-  const score = computeBubbleScore(mockProfile, "medium_term");
+  const score = computeBubbleScore(profile, "medium_term");
   const topGenres = score.genreDistribution.slice(0, 3).map((item) => item.genre);
 
   return (
@@ -26,10 +32,10 @@ export default async function SharePage({ params }: SharePageProps) {
       <section className="panel panel-glow">
         <p className="eyebrow">Public share card</p>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight text-[var(--text-strong)]">
-          {mockProfile.displayName}&apos;s Unwrapped snapshot
+          {profile.displayName}&apos;s Unwrapped snapshot
         </h1>
         <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--text-muted)]">
-          This is the read-only v1 share route. It will later be backed by persisted user snapshots and a generated OG image endpoint.
+          This is the read-only v1 share route. It currently uses the latest cached snapshot for a Spotify user when one exists, and will later gain a generated OG image endpoint.
         </p>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-3">

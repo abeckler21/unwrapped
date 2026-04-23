@@ -25,3 +25,6 @@
 - Added a setup page so missing Spotify or Supabase credentials fail gracefully and explain the next required configuration steps.
 - Verified the auth and setup slice with linting, type-checking, and a production build.
 - Checked Spotify's current redirect URI requirements and updated local development defaults from localhost to 127.0.0.1 so the app matches Spotify's enforced loopback-IP policy.
+- Fixed local-development session cookies so auth can work over plain HTTP on 127.0.0.1 while still staying secure in production.
+- Added a live Spotify profile loader with refresh-token handling, Supabase cache reads and writes, and automatic fallback to the demo profile when no valid session exists.
+- Updated the dashboard to use the active profile instead of the seeded profile only, and updated the share route so it can render cached real user snapshots.

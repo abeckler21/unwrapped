@@ -9,7 +9,12 @@ type CachedProfileRow = {
   fetched_at: string;
 };
 
-export async function readCachedSpotifyProfile(spotifyUserId: string) {
+export async function readCachedSpotifyProfile(
+  spotifyUserId: string,
+  options?: {
+    ignoreTtl?: boolean;
+  },
+) {
   const supabase = getSupabaseAdminClient();
 
   if (!supabase) {
@@ -28,7 +33,7 @@ export async function readCachedSpotifyProfile(spotifyUserId: string) {
 
   const ageMs = Date.now() - new Date(data.fetched_at).getTime();
 
-  if (ageMs > TWENTY_FOUR_HOURS_MS) {
+  if (!options?.ignoreTtl && ageMs > TWENTY_FOUR_HOURS_MS) {
     return null;
   }
 

@@ -9,21 +9,54 @@ import {
   popularityConcentrationTrend,
   songLengthTrend,
 } from "@/lib/data/macro-trends";
-import { mockProfile } from "@/lib/data/mock-profile";
 import { formatDuration, formatNumber, formatPercent } from "@/lib/format";
+import { getCurrentSpotifyProfile } from "@/lib/spotify/current-profile";
+export default async function DashboardPage() {
+  const { profile, usingDemoData, isAuthenticated } = await getCurrentSpotifyProfile();
+  const score = computeBubbleScore(profile, "medium_term");
+  const shareHref = usingDemoData ? "/share/demo-user" : `/share/${profile.userId}`;
 
-const score = computeBubbleScore(mockProfile, "medium_term");
-
-export default function DashboardPage() {
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-5 py-6 sm:px-8 lg:px-10">
+      <section className="panel flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="eyebrow">Data source</p>
+          <h2 className="text-2xl font-semibold text-[var(--text-strong)]">
+            {usingDemoData ? "Demo profile is active" : "Live Spotify profile is active"}
+          </h2>
+          <p className="mt-2 text-sm leading-7 text-[var(--text-muted)]">
+            {usingDemoData
+              ? "You are viewing the seeded fallback profile. Use Spotify login once your app and Supabase project are fully configured."
+              : profile.fetchedFromCache
+                ? "This dashboard loaded from the 24-hour Supabase cache instead of hitting Spotify again."
+                : "This dashboard loaded directly from Spotify and refreshed the cache."}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          {isAuthenticated ? (
+            <form action="/api/auth/logout" method="post">
+              <button type="submit" className="button-secondary">
+                Log out
+              </button>
+            </form>
+          ) : (
+            <Link href="/api/auth/login" className="button-primary">
+              Log in with Spotify
+            </Link>
+          )}
+          <Link href="/setup" className="button-secondary">
+            Setup checklist
+          </Link>
+        </div>
+      </section>
+
       <section className="grid gap-4 lg:grid-cols-[1.4fr_0.9fr]">
         <div className="panel panel-glow flex flex-col gap-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-2xl">
-              <p className="eyebrow">v1 dashboard preview</p>
+              <p className="eyebrow">{usingDemoData ? "v1 dashboard preview" : "v1 live dashboard"}</p>
               <h1 className="text-4xl font-semibold tracking-tight text-[var(--text-strong)] sm:text-5xl">
-                {mockProfile.displayName}, your listening isn&apos;t neutral.
+                {profile.displayName}, your listening isn&apos;t neutral.
               </h1>
             </div>
             <div className="inline-flex rounded-full border border-white/10 bg-white/5 p-1 text-sm">
@@ -96,8 +129,8 @@ export default function DashboardPage() {
               <p className="eyebrow">Listening at a glance</p>
               <h2 className="text-2xl font-semibold text-[var(--text-strong)]">What shapes the score</h2>
             </div>
-            <Link href="/share/demo-user" className="button-secondary">
-              Share preview
+            <Link href={shareHref} className="button-secondary">
+              {usingDemoData ? "Share preview" : "Share route"}
             </Link>
           </div>
 
@@ -125,7 +158,7 @@ export default function DashboardPage() {
             <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
               <p className="text-sm text-[var(--text-muted)]">Saved tracks</p>
               <p className="mt-2 text-3xl font-semibold text-[var(--text-strong)]">
-                {formatNumber(mockProfile.savedTrackCount)}
+                {formatNumber(profile.savedTrackCount)}
               </p>
               <p className="mt-1 text-sm text-[var(--text-soft)]">
                 Useful later for contrasting active choosing against passive discovery.
@@ -163,7 +196,7 @@ export default function DashboardPage() {
           <p className="eyebrow">Top artists</p>
           <h2 className="text-2xl font-semibold text-[var(--text-strong)]">The people you keep returning to</h2>
           <div className="mt-6 space-y-3">
-            {mockProfile.timeRanges.medium_term.topArtists.map((artist, index) => (
+            {profile.timeRanges.medium_term.topArtists.map((artist, index) => (
               <div
                 key={artist.id}
                 className="flex items-center justify-between gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] px-4 py-4"
@@ -202,7 +235,7 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          {mockProfile.timeRanges.medium_term.topTracks.map((track) => (
+          {profile.timeRanges.medium_term.topTracks.map((track) => (
             <article key={track.id} className="rounded-[26px] border border-white/10 bg-white/[0.03] p-4">
               <div className="aspect-square rounded-[20px] bg-[linear-gradient(135deg,rgba(249,115,22,0.4),rgba(56,189,248,0.16))]" />
               <h3 className="mt-4 text-lg font-medium text-[var(--text-strong)]">{track.name}</h3>
