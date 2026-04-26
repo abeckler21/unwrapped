@@ -1,0 +1,19 @@
+V1 Work Summary
+
+For V1 of Unwrapped, we built the project from a planning-only repository into a working Next.js application with the core "Mirror" experience in place. We started by scaffolding a Next.js App Router app with TypeScript and Tailwind, added validation scripts, installed the main V1 dependencies, and set up a repeatable development workflow with linting, type-checking, and production builds.
+
+We implemented the first version of the Filter Bubble Score. The scoring system now analyzes genre concentration, artist repetition, popularity skew, and temporal consistency across Spotify listening windows. Each score is typed, explainable, and produces a tier such as "Wide Open" or "Narrowing," along with an estimated organic versus algorithmic listening ratio.
+
+We added Spotify OAuth foundations using the Authorization Code with PKCE flow. The app now includes login, callback, logout, session cookies, token exchange, refresh-token handling, and graceful fallback behavior when a session is missing or invalid. We also added Spotify profile fetching for user info, top artists, top tracks, playlists, recently played tracks, and saved-track counts.
+
+We wired Supabase into the V1 data layer. The app now has an admin Supabase helper, profile cache reads and writes, an initial schema migration, and a 24-hour cache path so repeat visits do not always hit Spotify. We also added a cache completeness guard so older cached profiles that are missing required time ranges are ignored and refreshed.
+
+A major part of the work was building the dashboard experience. The dashboard now supports the three V1 listening windows: 4 weeks, 6 months, and all time. It shows the Filter Bubble Score as the hero element, score breakdowns, estimated organic and algorithmic listening, average track length, genre footprint, top artists, top tracks, and macro trend callouts. We also redesigned the dashboard layout into a more polished, demo-ready interface with a centered time-range control, score hero, compact sub-score sidebar, genre and artist section, track list, macro trend grid, and source/honesty footer.
+
+We added seeded demo data and seeded macro trend data so the app can still be demonstrated before live credentials or real cached Spotify data are available. The homepage, setup page, dashboard, and share preview route were updated to reflect the Unwrapped product framing instead of the default scaffold.
+
+We handled several real-world Spotify edge cases. During testing, Spotify returned thinner-than-expected artist metadata for this app/user path, and a follow-up artist enrichment endpoint returned 403 Forbidden. To keep the dashboard honest, we removed misleading fallback values, stopped showing unreliable artist follower/popularity rows, and added optional Last.fm enrichment with Supabase caching so genre analysis can recover when Spotify withholds genre tags.
+
+We also fixed chart rendering issues. The original Recharts-based genre donut was fragile because of client-side container measurement problems, so we replaced it with a deterministic SVG donut that server-renders reliably. Other macro charts use a shared measured chart frame and element-size hook to avoid width warnings while staying responsive.
+
+Finally, we kept the project log updated throughout the work and verified the latest V1 slice with npm run type-check, npm run lint, and npm run build. The latest committed version includes the verified URL-driven listening-window switching, the redesigned dashboard, the cache completeness guard, and the fixed genre footprint chart.
