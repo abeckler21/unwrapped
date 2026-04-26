@@ -38,3 +38,13 @@
 - Removed artist follower and popularity rows from the top-artists cards after confirming Spotify does not provide those fields reliably for this app/user path.
 - Reworked the chart components several times to eliminate Recharts container-measurement warnings while keeping the charts responsive and interactive.
 - Added a shared measured chart frame and a small element-size hook so the dashboard charts render with stable dimensions in development and production.
+- Extracted all time-range-dependent dashboard content into a reusable dashboard component and wired the 4 weeks / 6 months / all time control through deep-linkable `/dashboard?range=...` states.
+- The dashboard page now parses the range search param, fetches the profile once for the request, and passes the selected range into the dashboard content.
+- Fixed a missing guard in the macro trend 02 annotation that would have rendered a misleading zero when Spotify withholds genre metadata.
+- Renamed the dashboard share link label from "Share route" to "Share your score".
+- Diagnosed toggle unresponsiveness: cached Supabase profiles from earlier builds may have lacked all three time-range keys; added a completeness check to readCachedSpotifyProfile that returns null (forcing a fresh Spotify fetch) if any range is missing.
+- Replaced the listening-window controls with explicit range links after verifying the URL-driven version updates the selected window, score, artist list, track list, and macro callouts correctly.
+- Fully redesigned the dashboard layout: centered time-range toggle at the top; score hero with large number, tier, and three stat boxes; sub-scores as a compact sidebar of four rows; genre footprint and top artists as a two-column section; top tracks as a compact numbered list; macro trends as a three-column grid with per-chart callouts; sources as a footer strip.
+- Fixed the genre footprint chart by replacing the fragile client-measured Recharts donut with a deterministic SVG donut that server-renders with the rest of the dashboard.
+- Tried a seamless local-state listening-window transition, found it did not work reliably in the current app, and restored the verified URL-driven range links before committing.
+- Re-ran type-checking, linting, and the production build after restoring the verified dashboard behavior.

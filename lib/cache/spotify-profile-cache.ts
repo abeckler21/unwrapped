@@ -3,6 +3,15 @@ import { SpotifyProfile } from "@/lib/types/spotify";
 
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
 
+const REQUIRED_TIME_RANGES = ["short_term", "medium_term", "long_term"] as const;
+
+function isProfileComplete(profile: unknown): profile is SpotifyProfile {
+  if (!profile || typeof profile !== "object") return false;
+  const ranges = (profile as Record<string, unknown>).timeRanges;
+  if (!ranges || typeof ranges !== "object") return false;
+  return REQUIRED_TIME_RANGES.every((r) => r in (ranges as object));
+}
+
 type CachedProfileRow = {
   spotify_user_id: string;
   profile: SpotifyProfile;
@@ -34,6 +43,10 @@ export async function readCachedSpotifyProfile(
   const ageMs = Date.now() - new Date(data.fetched_at).getTime();
 
   if (!options?.ignoreTtl && ageMs > TWENTY_FOUR_HOURS_MS) {
+    return null;
+  }
+
+  if (!isProfileComplete(data.profile)) {
     return null;
   }
 
