@@ -109,7 +109,7 @@ Write the 2–3 sentence prose reading now. Refer to the listener in second pers
 
 const CACHE_TTL_DAYS = 7
 
-async function readCachedArchetype(userId: string): Promise<Archetype | null> {
+export async function readCachedArchetype(userId: string): Promise<Archetype | null> {
   const supabase = getSupabase()
   if (!supabase) return null
 
