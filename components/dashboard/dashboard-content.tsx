@@ -100,14 +100,11 @@ export function DashboardContent({ profile, usingDemoData, range, archetype, vis
         </section>
       ) : (
         !usingDemoData && (
-          <section className="panel flex items-center gap-4 p-6">
-            <span className="text-2xl">📅</span>
-            <div>
-              <p className="text-sm font-medium text-[var(--text-strong)]">Come back next week</p>
-              <p className="text-sm text-[var(--text-muted)]">
-                Once you have a few visits logged, this section will show whether your filter bubble is widening or narrowing over time.
-              </p>
-            </div>
+          <section className="panel flex flex-col gap-2 p-6">
+            <p className="text-sm font-medium text-[var(--text-strong)]">Your trend starts here</p>
+            <p className="text-sm text-[var(--text-muted)]">
+              Come back in a few days and this section will show whether your filter bubble is widening or narrowing over time.
+            </p>
           </section>
         )
       )}
