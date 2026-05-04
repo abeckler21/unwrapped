@@ -13,15 +13,23 @@ import {
 import { formatDuration, formatPercent } from "@/lib/format";
 import { BubbleScoreTrendChart } from "@/components/visualizations/bubble-score-trend-chart";
 import type { Archetype } from "@/lib/ai/archetype";
+import type { ScoreBreakdownItem } from "@/lib/analysis/bubble-score";
 import type { VisitRecord } from "@/lib/analysis/visit-tracking";
 import type { SpotifyProfile, TimeRange } from "@/lib/types/spotify";
 
 const TIME_RANGES: TimeRange[] = ["short_term", "medium_term", "long_term"];
 
 const TIME_RANGE_LABELS: Record<TimeRange, string> = {
-  short_term: "4 weeks",
+  short_term: "Recent",
   medium_term: "6 months",
   long_term: "All time",
+};
+
+const BREAKDOWN_CONTEXT: Record<ScoreBreakdownItem["key"], string> = {
+  genreConcentration: "High = narrower genre mix",
+  artistRepetition: "High = same artists repeat",
+  popularitySkew: "High = more mainstream",
+  temporalConsistency: "High = taste is looping",
 };
 
 type Props = {
@@ -70,6 +78,9 @@ export function DashboardContent({ profile, usingDemoData, range, archetype, vis
         <div className="shrink-0">
           <p className="eyebrow">Your listener archetype</p>
           <p className="mt-1 text-2xl font-semibold text-[var(--accent)]">{archetype.name}</p>
+          <p className="mt-2 max-w-44 text-xs leading-5 text-[var(--text-muted)]">
+            Based on your 6-month listening profile.
+          </p>
         </div>
         <p className="text-sm leading-7 text-[var(--text-muted)] sm:border-l sm:border-white/10 sm:pl-8">
           {archetype.prose}
@@ -169,6 +180,9 @@ export function DashboardContent({ profile, usingDemoData, range, archetype, vis
                 <p className="text-sm font-medium text-[var(--text-strong)]">{item.label}</p>
                 <p className="mt-0.5 text-xs text-[var(--text-muted)]">
                   {(item.weight * 100).toFixed(0)}% of score
+                </p>
+                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                  {BREAKDOWN_CONTEXT[item.key]}
                 </p>
               </div>
               <span className="text-xl font-semibold tabular-nums text-[var(--text-strong)]">
@@ -421,8 +435,8 @@ export function DashboardContent({ profile, usingDemoData, range, archetype, vis
           <p className="eyebrow">Honesty note</p>
           <p className="mt-2 max-w-lg text-sm leading-7 text-[var(--text-muted)]">
             The organic/algorithmic split is inferred from playlist names and popularity signals —
-            not measured directly. The score is explanatory, not diagnostic. Macro data will be
-            replaced with cited datasets in a later version.
+            not measured directly. The score is explanatory, not diagnostic. Macro trends are
+            preloaded from the source set listed here and should be read as directional context.
           </p>
         </div>
         <ul className="shrink-0 space-y-1 text-xs text-[var(--text-muted)]">

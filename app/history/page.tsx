@@ -3,15 +3,9 @@ import Link from "next/link";
 
 import { LineageRail } from "@/components/visualizations/lineage-rail";
 import { getGenreHistories } from "@/lib/ai/genre-history";
-import { enrichProfileWithLastFmGenres } from "@/lib/lastfm/enrich-profile";
 import { getCurrentSpotifyProfile } from "@/lib/spotify/current-profile";
 import { computeBubbleScore } from "@/lib/analysis/bubble-score";
 import type { GenreHistory } from "@/lib/ai/genre-history";
-
-// Derive top genres from the profile score distribution
-function getTopGenres(genreDistribution: Array<{ genre: string; share: number }>, topArtistNames: string[]): string[] {
-  return genreDistribution.slice(0, 3).map(g => g.genre);
-}
 
 export default async function HistoryPage() {
   const { profile, usingDemoData } = await getCurrentSpotifyProfile();
@@ -24,17 +18,12 @@ export default async function HistoryPage() {
     ? topGenres
     : ["jazz", "hip-hop", "rock"];
 
-  // Derive up to 3 of the user's top artist names for lineage end-node context
-  const topArtistNames = profile.timeRanges.medium_term.topArtists
-    .slice(0, 3)
-    .map(a => a.name);
-
   let histories: GenreHistory[] = [];
   let error: string | null = null;
 
   try {
     histories = await getGenreHistories(genresToFetch);
-  } catch (e) {
+  } catch {
     error = "Could not generate genre histories right now. Try again in a moment.";
   }
 
@@ -43,7 +32,10 @@ export default async function HistoryPage() {
 
       {/* Header */}
       <section>
-        <Link href="/dashboard" className="eyebrow hover:text-[var(--text-strong)] transition-colors">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-[var(--text-soft)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+        >
           ← Back to dashboard
         </Link>
         <h1 className="mt-4 text-4xl font-bold text-[var(--text-strong)] sm:text-5xl">
@@ -114,7 +106,9 @@ export default async function HistoryPage() {
                     </div>
                   ) : (
                     <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06]">
-                      <span className="text-xl">🎵</span>
+                      <span className="text-xl font-semibold text-[var(--accent)]">
+                        {pioneer.name.trim().charAt(0).toUpperCase() || "?"}
+                      </span>
                     </div>
                   )}
                   <div className="min-w-0">
