@@ -1,9 +1,11 @@
+"use client";
+
 import Image from "next/image";
-import Link from "next/link";
+import { useState } from "react";
 
 import { GenreDistributionChart } from "@/components/visualizations/genre-distribution-chart";
 import { MacroTrendChart } from "@/components/visualizations/macro-trend-chart";
-import { computeBubbleScore } from "@/lib/analysis/bubble-score";
+import { ShareActions } from "@/components/dashboard/share-actions";
 import {
   genreShareTrend,
   macroSources,
@@ -13,7 +15,7 @@ import {
 import { formatDuration, formatPercent } from "@/lib/format";
 import { BubbleScoreTrendChart } from "@/components/visualizations/bubble-score-trend-chart";
 import type { Archetype } from "@/lib/ai/archetype";
-import type { ScoreBreakdownItem } from "@/lib/analysis/bubble-score";
+import type { BubbleScoreResult, ScoreBreakdownItem } from "@/lib/analysis/bubble-score";
 import type { VisitRecord } from "@/lib/analysis/visit-tracking";
 import type { SpotifyProfile, TimeRange } from "@/lib/types/spotify";
 
@@ -35,16 +37,34 @@ const BREAKDOWN_CONTEXT: Record<ScoreBreakdownItem["key"], string> = {
 type Props = {
   profile: SpotifyProfile;
   usingDemoData: boolean;
-  range: TimeRange;
+  initialRange: TimeRange;
+  scoresByRange: Record<TimeRange, BubbleScoreResult>;
   archetype: Archetype;
   visitHistory: VisitRecord[];
   trendNarrative: string | null;
 };
 
-export function DashboardContent({ profile, usingDemoData, range, archetype, visitHistory, trendNarrative }: Props) {
-  const score = computeBubbleScore(profile, range);
+export function DashboardContent({
+  profile,
+  usingDemoData,
+  initialRange,
+  scoresByRange,
+  archetype,
+  visitHistory,
+  trendNarrative,
+}: Props) {
+  const [range, setRange] = useState(initialRange);
+  const score = scoresByRange[range];
   const currentData = profile.timeRanges[range];
   const shareHref = usingDemoData ? "/share/demo-user" : `/share/${profile.userId}`;
+
+  function selectRange(nextRange: TimeRange) {
+    setRange(nextRange);
+
+    const url = new URL(window.location.href);
+    url.searchParams.set("range", nextRange);
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  }
 
   return (
     <div className="flex flex-col gap-10">
@@ -55,11 +75,11 @@ export function DashboardContent({ profile, usingDemoData, range, archetype, vis
           <p className="eyebrow">Listening window</p>
           <div className="flex rounded-full border border-white/10 bg-white/[0.04] p-1">
             {TIME_RANGES.map((r) => (
-              <Link
+              <button
                 key={r}
-                href={`/dashboard?range=${r}`}
-                scroll={false}
-                aria-current={r === range ? "true" : undefined}
+                type="button"
+                onClick={() => selectRange(r)}
+                aria-pressed={r === range}
                 className={
                   r === range
                     ? "rounded-full bg-[var(--accent)] px-6 py-2 text-sm font-semibold text-black"
@@ -67,7 +87,7 @@ export function DashboardContent({ profile, usingDemoData, range, archetype, vis
                 }
               >
                 {TIME_RANGE_LABELS[r]}
-              </Link>
+              </button>
             ))}
           </div>
         </div>
@@ -190,9 +210,7 @@ export function DashboardContent({ profile, usingDemoData, range, archetype, vis
               </span>
             </div>
           ))}
-          <Link href={shareHref} className="button-primary mt-1 justify-center">
-            Share your score
-          </Link>
+          <ShareActions shareHref={shareHref} />
         </div>
       </section>
 

@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { LineageRail } from "@/components/visualizations/lineage-rail";
-import { getGenreHistories } from "@/lib/ai/genre-history";
+import { getGenreHistoriesWithFailures } from "@/lib/ai/genre-history";
 import { getCurrentSpotifyProfile } from "@/lib/spotify/current-profile";
 import { computeBubbleScore } from "@/lib/analysis/bubble-score";
 import type { GenreHistory } from "@/lib/ai/genre-history";
@@ -19,10 +19,13 @@ export default async function HistoryPage() {
     : ["jazz", "hip-hop", "rock"];
 
   let histories: GenreHistory[] = [];
+  let failedGenres: string[] = [];
   let error: string | null = null;
 
   try {
-    histories = await getGenreHistories(genresToFetch);
+    const result = await getGenreHistoriesWithFailures(genresToFetch);
+    histories = result.histories;
+    failedGenres = result.failedGenres;
   } catch {
     error = "Could not generate genre histories right now. Try again in a moment.";
   }
@@ -56,6 +59,14 @@ export default async function HistoryPage() {
 
       {error && (
         <div className="panel p-6 text-sm text-[var(--text-muted)]">{error}</div>
+      )}
+
+      {!error && failedGenres.length > 0 && (
+        <div className="rounded-2xl border border-[rgba(249,115,22,0.35)] bg-[rgba(249,115,22,0.08)] p-4 text-sm leading-6 text-[var(--text-soft)]">
+          {failedGenres.length === 1
+            ? `One genre history could not be loaded: ${failedGenres[0]}.`
+            : `${failedGenres.length} genre histories could not be loaded: ${failedGenres.join(", ")}.`}
+        </div>
       )}
 
       {/* Genre history cards */}

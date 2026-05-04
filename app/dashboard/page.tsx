@@ -4,6 +4,8 @@ import { DashboardContent } from "@/components/dashboard/dashboard-content";
 import { getOrGenerateArchetype } from "@/lib/ai/archetype";
 import { computeBubbleScore } from "@/lib/analysis/bubble-score";
 import { recordVisit, getVisitHistory, generateTrendNarrative } from "@/lib/analysis/visit-tracking";
+import type { BubbleScoreResult } from "@/lib/analysis/bubble-score";
+import type { VisitRecord } from "@/lib/analysis/visit-tracking";
 import { getCurrentSpotifyProfile } from "@/lib/spotify/current-profile";
 import type { TimeRange } from "@/lib/types/spotify";
 
@@ -26,14 +28,32 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const range = parseRange((await searchParams)?.range);
   const { profile, usingDemoData, isAuthenticated, needsReconnect } =
     await getCurrentSpotifyProfile();
-  const archetype = await getOrGenerateArchetype(profile, usingDemoData);
 
-  const currentScore = usingDemoData ? null : computeBubbleScore(profile, "medium_term");
-  if (!usingDemoData && currentScore) {
-    await recordVisit(profile.userId, currentScore.score);
+  const scoresByRange: Record<TimeRange, BubbleScoreResult> = {
+    short_term: computeBubbleScore(profile, "short_term"),
+    medium_term: computeBubbleScore(profile, "medium_term"),
+    long_term: computeBubbleScore(profile, "long_term"),
+  };
+
+  let visitHistory: VisitRecord[] = [];
+  let trendNarrative: string | null = null;
+
+  const archetypePromise = getOrGenerateArchetype(
+    profile,
+    usingDemoData,
+    scoresByRange.medium_term,
+  );
+
+  if (!usingDemoData) {
+    await Promise.all([
+      archetypePromise,
+      recordVisit(profile.userId, scoresByRange.medium_term.score),
+    ]);
+    visitHistory = await getVisitHistory(profile.userId);
+    trendNarrative = await generateTrendNarrative(visitHistory);
   }
-  const visitHistory = usingDemoData ? [] : await getVisitHistory(profile.userId);
-  const trendNarrative = await generateTrendNarrative(visitHistory);
+
+  const archetype = await archetypePromise;
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-5 py-6 sm:px-8 lg:px-10">
@@ -79,7 +99,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       <DashboardContent
         profile={profile}
         usingDemoData={usingDemoData}
-        range={range}
+        initialRange={range}
+        scoresByRange={scoresByRange}
         archetype={archetype}
         visitHistory={visitHistory}
         trendNarrative={trendNarrative}

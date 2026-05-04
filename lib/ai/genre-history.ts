@@ -28,6 +28,11 @@ export type GenreHistory = {
   lineage: LineageNode[] // the horizontal rail data, chronological
 }
 
+export type GenreHistoriesResult = {
+  histories: GenreHistory[]
+  failedGenres: string[]
+}
+
 // ── Zod schema for structured LLM output ────────────────────────────────────
 
 const PioneerSchema = z.object({
@@ -173,18 +178,28 @@ export async function getGenreHistory(genre: string): Promise<GenreHistory> {
   return history
 }
 
-export async function getGenreHistories(genres: string[]): Promise<GenreHistory[]> {
+export async function getGenreHistoriesWithFailures(genres: string[]): Promise<GenreHistoriesResult> {
   // Cap at 3 genres and generate in parallel
   const top3 = genres.slice(0, 3)
   const results = await Promise.allSettled(top3.map(g => getGenreHistory(g)))
 
+  const histories: GenreHistory[] = []
+  const failedGenres: string[] = []
+
   results.forEach((r, i) => {
     if (r.status === 'rejected') {
+      failedGenres.push(top3[i])
       console.error(`[genre-history] Failed to generate history for "${top3[i]}":`, r.reason)
+      return
     }
+
+    histories.push(r.value)
   })
 
-  return results
-    .filter((r): r is PromiseFulfilledResult<GenreHistory> => r.status === 'fulfilled')
-    .map(r => r.value)
+  return { histories, failedGenres }
+}
+
+export async function getGenreHistories(genres: string[]): Promise<GenreHistory[]> {
+  const result = await getGenreHistoriesWithFailures(genres)
+  return result.histories
 }

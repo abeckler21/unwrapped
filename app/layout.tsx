@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getSpotifySession } from "@/lib/spotify/session";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -7,11 +8,14 @@ export const metadata: Metadata = {
   description: "See how Spotify's algorithm has shaped your taste. Filter Bubble Score, genre history, and listener archetype — built from your actual listening data.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getSpotifySession();
+  const hasActiveSession = Boolean(session.spotifyUserId && session.accessToken);
+
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full">
@@ -41,9 +45,17 @@ export default function RootLayout({
                 >
                   History
                 </Link>
-                <Link href="/api/auth/login" className="button-primary ml-2">
-                  Log in with Spotify
-                </Link>
+                {hasActiveSession ? (
+                  <form action="/api/auth/logout" method="post" className="ml-2">
+                    <button type="submit" className="button-secondary text-sm">
+                      Log out
+                    </button>
+                  </form>
+                ) : (
+                  <Link href="/api/auth/login" className="button-primary ml-2">
+                    Log in with Spotify
+                  </Link>
+                )}
               </nav>
 
             </div>

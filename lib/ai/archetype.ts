@@ -150,13 +150,14 @@ const DEMO_ARCHETYPE: Archetype = {
 export async function getOrGenerateArchetype(
   profile: SpotifyProfile,
   usingDemoData: boolean,
+  mediumTermScore?: BubbleScoreResult,
 ): Promise<Archetype> {
   if (usingDemoData) return DEMO_ARCHETYPE
 
   const cached = await readCachedArchetype(profile.userId)
   if (cached) return cached
 
-  const score = computeBubbleScore(profile, 'medium_term')
+  const score = mediumTermScore ?? computeBubbleScore(profile, 'medium_term')
   const name = assignArchetypeName(score)
 
   let prose: string
