@@ -10,6 +10,30 @@ type Props = {
   accentColor?: string;
 };
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function truncateText(text: string, maxChars: number) {
+  if (text.length <= maxChars) {
+    return text;
+  }
+
+  return `${text.slice(0, Math.max(1, maxChars - 1)).trimEnd()}…`;
+}
+
+function getTextAnchor(index: number, total: number) {
+  if (index === 0) {
+    return "start";
+  }
+
+  if (index === total - 1) {
+    return "end";
+  }
+
+  return "middle";
+}
+
 export function LineageRail({ nodes, accentColor = "var(--accent)" }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { width } = useElementSize(containerRef);
@@ -30,7 +54,7 @@ export function LineageRail({ nodes, accentColor = "var(--accent)" }: Props) {
     );
   }
 
-  const usable = width - PADDING_X * 2;
+  const usable = Math.max(width - PADDING_X * 2, 0);
   const step = nodes.length > 1 ? usable / (nodes.length - 1) : 0;
 
   return (
@@ -52,9 +76,17 @@ export function LineageRail({ nodes, accentColor = "var(--accent)" }: Props) {
           const isLast = i === nodes.length - 1;
           const labelY = i % 2 === 0 ? TRACK_Y - 22 : TRACK_Y + 36;
           const noteY = i % 2 === 0 ? TRACK_Y - 36 : TRACK_Y + 50;
+          const textAnchor = getTextAnchor(i, nodes.length);
+          const slotWidth = nodes.length > 1
+            ? (isFirst || isLast ? step * 0.9 : step * 0.82)
+            : usable;
+          const labelMaxChars = clamp(Math.floor(slotWidth / 6.1), 8, 40);
+          const noteMaxChars = clamp(Math.floor(slotWidth / 5.2), 12, 60);
 
           return (
             <g key={i}>
+              <title>{`${node.year}: ${node.label} — ${node.note}`}</title>
+
               {/* Connector tick */}
               <line
                 x1={cx}
@@ -91,13 +123,13 @@ export function LineageRail({ nodes, accentColor = "var(--accent)" }: Props) {
               <text
                 x={cx}
                 y={labelY}
-                textAnchor="middle"
+                textAnchor={textAnchor}
                 fontSize={11}
                 fontWeight={isFirst || isLast ? 600 : 400}
                 fill={isFirst || isLast ? "var(--text-strong)" : "rgba(244,241,234,0.75)"}
                 fontFamily="inherit"
               >
-                {node.label.length > 18 ? node.label.slice(0, 16) + "…" : node.label}
+                {truncateText(node.label, labelMaxChars)}
               </text>
 
               {/* Note — only on hover effect not possible in SVG without JS, show on desktop for alternating */}
@@ -105,12 +137,12 @@ export function LineageRail({ nodes, accentColor = "var(--accent)" }: Props) {
                 <text
                   x={cx}
                   y={noteY}
-                  textAnchor="middle"
+                  textAnchor={textAnchor}
                   fontSize={9}
                   fill="rgba(244,241,234,0.35)"
                   fontFamily="inherit"
                 >
-                  {node.note.length > 24 ? node.note.slice(0, 22) + "…" : node.note}
+                  {truncateText(node.note, noteMaxChars)}
                 </text>
               )}
             </g>

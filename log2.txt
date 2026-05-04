@@ -80,11 +80,61 @@ Feedback incorporated from V1 review:
 - UI overhaul: removed all v1/v2/class project references from homepage,
   dashboard, setup page, and nav — app now reads as a real product
 
+=== V2 REVIEW POLISH PASS — MAY 4, 2026 ===
+- Fixed dashboard honesty-note copy so the production UI no longer says macro
+  data "will be replaced" later; now frames preloaded macro trends as
+  directional context and points to the listed source set.
+- Clarified listener archetype scope: archetype remains based on the 6-month
+  listening profile, matching the current weekly Supabase cache model, and the
+  dashboard now says this explicitly.
+- Renamed the short-term dashboard tab from "4 weeks" to "Recent" while keeping
+  the Spotify time range implementation unchanged internally.
+- Added plain-English sub-score context in the dashboard breakdown:
+  genre concentration, artist repetition, popularity skew, and temporal
+  consistency now each explain what a high number means.
+- Cleaned dead /history code: removed the unused getTopGenres helper,
+  unused topArtistNames variable, and unused Last.fm enrichment import.
+- Restyled the /history "Back to dashboard" link as an obvious nav control
+  instead of using eyebrow label styling.
+- Replaced the /history pioneer portrait fallback emoji with an accent-colored
+  monogram to better match the app's visual language.
+- Made the global layout auth-aware by reading only the existing Spotify
+  session cookies: authenticated users now see a logout control instead of
+  "Log in with Spotify" in the header, without loading the full profile in
+  app/layout.tsx.
+- Added route-level skeleton loading states for /dashboard and /history so
+  cold server work, cache misses, and LLM generation no longer feel like a
+  blank page.
+- Changed genre history loading to report partial failures: if one of the
+  user's top genres fails to generate, the page shows a small notice naming the
+  failed genre(s) instead of silently rendering fewer cards.
+- Added a dashboard "Copy link" share action alongside "Share your score";
+  it copies the absolute public share URL and shows copied/error feedback.
+- Refactored dashboard range switching for speed:
+  - app/dashboard/page.tsx now computes all three bubble scores once.
+  - The medium-term score is reused for visit tracking and archetype generation
+    to avoid duplicate server-side score computation.
+  - Archetype lookup/generation and visit recording run in parallel after the
+    profile loads.
+  - DashboardContent now switches Recent / 6 months / All time in client state
+    and updates the URL with history.replaceState, avoiding a full server
+    round-trip and preserving scroll position.
+- Added an optional precomputed medium-term score argument to
+  getOrGenerateArchetype so uncached archetype generation can reuse work.
+- Verified the polish/refactor pass with npm run lint, npm run type-check, and
+  npm run build.
+- Improved lineage rail label handling:
+  - Labels and notes now derive their truncation budget from the actual spacing
+    between SVG nodes instead of fixed global character limits.
+  - First and last node labels are anchored inward so edge labels get usable
+    space instead of clipping off the rail.
+  - Full lineage event text is preserved in an SVG title for hover/tooltips.
+- Re-verified after the lineage rail fix with npm run lint, npm run type-check,
+  and npm run build.
+
 === BUILD ORDER ===
 1. Vercel deployment (unblocks production testing)
 2. LLM setup (Groq account + AI SDK integration)
 3. Listener archetype (dashboard addition, self-contained)
 4. Temporal bubble score (new DB table + chart + narrative)
 5. Music history timeline (new page, most complex)
-
-
