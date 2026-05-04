@@ -52,10 +52,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               to see your real data.
             </p>
           ) : (
-            <p className="text-sm text-[var(--text-muted)]">
-              Logged in as{" "}
-              <span className="text-[var(--text-strong)]">{profile.displayName}</span>
-            </p>
+            <div>
+              <p className="eyebrow">Welcome {profile.displayName}</p>
+              <h1 className="mt-1 text-3xl font-bold text-[var(--text-strong)] sm:text-4xl">
+                This is you: <span className="text-[var(--accent)]">Unwrapped</span>
+              </h1>
+            </div>
           )}
         </div>
 

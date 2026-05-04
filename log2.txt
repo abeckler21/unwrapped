@@ -68,6 +68,18 @@ Feedback incorporated from V1 review:
   grid with Wikipedia images, lineage rail, AI-generated cultural context
 - Added "Music history" nav link in dashboard header
 
+=== PRODUCTION DEBUGGING ===
+- Diagnosed /history page returning empty: root cause was twofold:
+  1. Output.object (AI SDK v6 structured output) uses json_schema mode which
+     llama-3.3-70b-versatile on Groq does not support — switched to plain
+     generateText + JSON.parse
+  2. Zod schema had strict .max() char limits that the model's real responses
+     exceeded — removed all max() constraints, kept structural validation only
+- Verified via curl that /history now renders Jazz and indie folk genre cards
+- Removed temporary debug API route (/api/debug/genre-test)
+- UI overhaul: removed all v1/v2/class project references from homepage,
+  dashboard, setup page, and nav — app now reads as a real product
+
 === BUILD ORDER ===
 1. Vercel deployment (unblocks production testing)
 2. LLM setup (Groq account + AI SDK integration)

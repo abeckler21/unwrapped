@@ -1,4 +1,4 @@
-import { generateText, Output } from 'ai'
+import { generateText } from 'ai'
 import { z } from 'zod'
 import { getModel } from '@/lib/ai/client'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
@@ -33,23 +33,23 @@ export type GenreHistory = {
 const PioneerSchema = z.object({
   name: z.string(),
   years: z.string(),
-  role: z.string().max(120),
+  role: z.string(),
   imageQuery: z.string(),
 })
 
 const LineageNodeSchema = z.object({
-  year: z.number().int(),
-  label: z.string().max(40),
-  note: z.string().max(80),
+  year: z.number(),
+  label: z.string(),
+  note: z.string(),
 })
 
 const GenreHistorySchema = z.object({
   genre: z.string(),
   originEra: z.string(),
   originPlace: z.string(),
-  culturalContext: z.string().max(400),
-  pioneers: z.array(PioneerSchema).min(2).max(5),
-  lineage: z.array(LineageNodeSchema).min(4).max(8),
+  culturalContext: z.string(),
+  pioneers: z.array(PioneerSchema).min(1),
+  lineage: z.array(LineageNodeSchema).min(2),
 })
 
 // ── Wikimedia Commons image fetch ────────────────────────────────────────────
@@ -72,37 +72,54 @@ async function fetchWikimediaImage(query: string): Promise<string | null> {
 // ── LLM generation ───────────────────────────────────────────────────────────
 
 async function generateGenreHistory(genreName: string): Promise<GenreHistory> {
-  const { output } = await generateText({
+  const { text } = await generateText({
     model: getModel(),
-    output: Output.object({ schema: GenreHistorySchema }),
-    prompt: `You are a music historian writing accurate, specific content for a music analytics app. Generate a genre history for: "${genreName}".
+    prompt: `You are a music historian. Generate a JSON object describing the history of the "${genreName}" genre. Output ONLY valid JSON, no markdown, no explanation.
+
+Required shape:
+{
+  "genre": "display name of the genre",
+  "originEra": "decade range like '1910s–1920s'",
+  "originPlace": "specific city and region, not just a country",
+  "culturalContext": "2–3 sentences on the social/cultural conditions that created this genre. Be specific.",
+  "pioneers": [
+    {
+      "name": "full real name",
+      "years": "active decades e.g. '1940s–1960s'",
+      "role": "one sentence on their specific contribution",
+      "imageQuery": "Wikipedia article title for this person"
+    }
+  ],
+  "lineage": [
+    {
+      "year": 1920,
+      "label": "person, place, album, or movement (max 40 chars)",
+      "note": "very short phrase (max 80 chars)"
+    }
+  ]
+}
 
 Rules:
-- originEra: decade range like "1910s–1920s"
-- originPlace: specific city and region, not just a country
-- culturalContext: 2–3 sentences on the social/cultural conditions that created this genre. Be specific. Mention real events or movements where relevant.
-- pioneers: 2–5 real, verifiable artists who genuinely pioneered this genre. For each:
-  - name: full real name
-  - years: active decades, e.g. "1940s–1960s"
-  - role: one sentence on their specific contribution, not generic
-  - imageQuery: Wikipedia article title for this person (for image lookup)
-- lineage: 4–8 chronological nodes showing the evolution from origin to present. Each node:
-  - year: a specific year or representative year
-  - label: a person, place, album, or movement name (max 40 chars)
-  - note: one very short phrase (max 80 chars) describing this moment's significance
-
-Be accurate. Do not invent people or events. If you are uncertain about something, use a well-documented example instead.`,
+- pioneers: 2–5 real, verifiable people only
+- lineage: 4–8 nodes, chronological from origin to present
+- Be accurate. Do not invent people or events.
+- Output ONLY the JSON object, nothing else.`,
+    maxOutputTokens: 1200,
   })
+
+  // Strip any accidental markdown code fences
+  const clean = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim()
+  const parsed = GenreHistorySchema.parse(JSON.parse(clean))
 
   // Fetch Wikimedia images for pioneers
   const pioneersWithImages = await Promise.all(
-    output.pioneers.map(async (p) => ({
+    parsed.pioneers.map(async (p) => ({
       ...p,
       imageUrl: await fetchWikimediaImage(p.imageQuery),
     }))
   )
 
-  return { ...output, pioneers: pioneersWithImages }
+  return { ...parsed, pioneers: pioneersWithImages }
 }
 
 // ── Supabase cache ───────────────────────────────────────────────────────────
@@ -160,6 +177,12 @@ export async function getGenreHistories(genres: string[]): Promise<GenreHistory[
   // Cap at 3 genres and generate in parallel
   const top3 = genres.slice(0, 3)
   const results = await Promise.allSettled(top3.map(g => getGenreHistory(g)))
+
+  results.forEach((r, i) => {
+    if (r.status === 'rejected') {
+      console.error(`[genre-history] Failed to generate history for "${top3[i]}":`, r.reason)
+    }
+  })
 
   return results
     .filter((r): r is PromiseFulfilledResult<GenreHistory> => r.status === 'fulfilled')
