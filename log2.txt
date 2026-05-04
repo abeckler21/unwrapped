@@ -1,0 +1,78 @@
+V2 Work Log — Unwrapped ("The Depth")
+Deadline: Tuesday, May 5, 2026
+
+Feedback incorporated from V1 review:
+- Deploy to Vercel (public URL) so production bugs surface rather than hiding behind localhost tunneling
+- Ensure the frontend is visibly live and demo-able at a stable public URL
+- Auth flows need to be tested in a real production environment, not just localhost
+
+=== FINALIZED V2 FEATURE PLAN ===
+
+1. VERCEL DEPLOYMENT
+   - Install Vercel CLI, link repo, push env vars to Vercel
+   - Add production URL to Spotify developer dashboard as redirect URI
+   - Verify full auth + dashboard flow in production
+
+2. LLM INTEGRATION (Ollama local / Groq production)
+   - Vercel AI SDK with @ai-sdk/openai-compatible for provider abstraction
+   - Local: Ollama (llama3.2 or similar, free, no key)
+   - Production: Groq free tier (Llama 3.3 70B, API key only, no CC)
+   - Same code, different env vars per environment
+
+3. LISTENER ARCHETYPE (dashboard feature)
+   - Named archetype category assigned by rule from bubble score components
+     (e.g. "The Archaeologist", "The Passenger", "The Retreater", "The Omnivore")
+   - Bespoke prose paragraph from LLM using user's actual stats
+   - Appears on dashboard below Filter Bubble Score hero
+   - Cached in Supabase per user, regenerated weekly
+
+4. TEMPORAL BUBBLE SCORE
+   - Store bubble_score + timestamp in user_visits table on each dashboard load
+   - Line chart showing score history across visits
+   - AI-generated 1-2 sentence trend narrative
+   - First-visit prompt: "Come back next week to see your trend"
+
+5. MUSIC HISTORY TIMELINE (/history page)
+   - Separate page linked from dashboard nav
+   - Pulls user's top 3 genres via existing Last.fm enrichment layer
+   - Per-genre card: origin era + geography, 3-5 pioneering figures with images
+     (Wikimedia Commons - personal/non-commercial use)
+   - LLM generates narrative prose per genre, cached in Supabase by genre name
+   - Visual lineage: HORIZONTAL RAIL (SVG/D3) reading left-to-right as a story
+     "New Orleans 1910 → Miles Davis 1955 → D'Angelo 2000 → your listening today"
+   - Interactive timeline scrubber showing when user's genres emerged
+
+=== PROGRESS LOG ===
+- Deployed to Vercel at https://unwrapped-one.vercel.app
+- Added all env vars (Production + Preview) via Vercel CLI
+- Added production redirect URI to Spotify developer dashboard
+- Installed ai@6.0.175, @ai-sdk/groq@3.0.38, @ai-sdk/openai@3.0.60
+- Created lib/ai/client.ts: getModel() returns Groq (llama-3.3-70b-versatile)
+  in production or Ollama (llama3.2 via OpenAI-compat API) in local dev
+- Created lib/ai/archetype.ts: rule-based archetype assignment (6 types) +
+  LLM prose generation + Supabase cache with 7-day TTL
+- Created supabase/migrations/003_user_archetypes.sql (needs manual apply)
+- Added archetype card to dashboard between toggle and score hero
+- Archetype card shows named type (accent color) + bespoke prose paragraph
+- Created lib/analysis/visit-tracking.ts: recordVisit (once/day dedup),
+  getVisitHistory, generateTrendNarrative (LLM, 1-2 sentences)
+- Created BubbleScoreTrendChart: Recharts LineChart with tier reference lines
+- Dashboard records visit + fetches history on every load (real users only)
+- Shows trend chart + AI narrative when >= 2 visits; first-visit prompt otherwise
+- Created lib/ai/genre-history.ts: generateText + Output.object (AI SDK v6
+  structured output), Wikimedia Commons image fetch, Supabase cache (30-day TTL)
+- Created supabase/migrations/004_genre_history_cache.sql (needs manual apply)
+- Created components/visualizations/lineage-rail.tsx: client-side SVG horizontal
+  rail with alternating labels, tier dots, accent endpoints
+- Created app/history/page.tsx: /history route with per-genre cards, pioneer
+  grid with Wikipedia images, lineage rail, AI-generated cultural context
+- Added "Music history" nav link in dashboard header
+
+=== BUILD ORDER ===
+1. Vercel deployment (unblocks production testing)
+2. LLM setup (Groq account + AI SDK integration)
+3. Listener archetype (dashboard addition, self-contained)
+4. Temporal bubble score (new DB table + chart + narrative)
+5. Music history timeline (new page, most complex)
+
+

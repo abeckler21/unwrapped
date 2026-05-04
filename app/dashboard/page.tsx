@@ -1,6 +1,9 @@
 import Link from "next/link";
 
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
+import { getOrGenerateArchetype } from "@/lib/ai/archetype";
+import { computeBubbleScore } from "@/lib/analysis/bubble-score";
+import { recordVisit, getVisitHistory, generateTrendNarrative } from "@/lib/analysis/visit-tracking";
 import { getCurrentSpotifyProfile } from "@/lib/spotify/current-profile";
 import type { TimeRange } from "@/lib/types/spotify";
 
@@ -24,6 +27,15 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const range = parseRange((await searchParams)?.range);
   const { profile, usingDemoData, isAuthenticated, needsReconnect } =
     await getCurrentSpotifyProfile();
+  const archetype = await getOrGenerateArchetype(profile, usingDemoData);
+
+  // Temporal tracking — record today's score and fetch history (real users only)
+  const currentScore = usingDemoData ? null : computeBubbleScore(profile, 'medium_term');
+  if (!usingDemoData && currentScore) {
+    await recordVisit(profile.userId, currentScore.score);
+  }
+  const visitHistory = usingDemoData ? [] : await getVisitHistory(profile.userId);
+  const trendNarrative = await generateTrendNarrative(visitHistory);
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-5 py-6 sm:px-8 lg:px-10">
@@ -55,13 +67,23 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               Log in with Spotify
             </Link>
           )}
+          <Link href="/history" className="button-secondary">
+            Music history
+          </Link>
           <Link href="/setup" className="button-secondary">
             Setup checklist
           </Link>
         </div>
       </section>
 
-      <DashboardContent profile={profile} usingDemoData={usingDemoData} range={range} />
+      <DashboardContent
+        profile={profile}
+        usingDemoData={usingDemoData}
+        range={range}
+        archetype={archetype}
+        visitHistory={visitHistory}
+        trendNarrative={trendNarrative}
+      />
     </main>
   );
 }

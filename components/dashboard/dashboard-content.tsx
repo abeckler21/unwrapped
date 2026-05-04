@@ -11,6 +11,9 @@ import {
   songLengthTrend,
 } from "@/lib/data/macro-trends";
 import { formatDuration, formatPercent } from "@/lib/format";
+import { BubbleScoreTrendChart } from "@/components/visualizations/bubble-score-trend-chart";
+import type { Archetype } from "@/lib/ai/archetype";
+import type { VisitRecord } from "@/lib/analysis/visit-tracking";
 import type { SpotifyProfile, TimeRange } from "@/lib/types/spotify";
 
 const TIME_RANGES: TimeRange[] = ["short_term", "medium_term", "long_term"];
@@ -25,9 +28,12 @@ type Props = {
   profile: SpotifyProfile;
   usingDemoData: boolean;
   range: TimeRange;
+  archetype: Archetype;
+  visitHistory: VisitRecord[];
+  trendNarrative: string | null;
 };
 
-export function DashboardContent({ profile, usingDemoData, range }: Props) {
+export function DashboardContent({ profile, usingDemoData, range, archetype, visitHistory, trendNarrative }: Props) {
   const score = computeBubbleScore(profile, range);
   const currentData = profile.timeRanges[range];
   const shareHref = usingDemoData ? "/share/demo-user" : `/share/${profile.userId}`;
@@ -58,6 +64,53 @@ export function DashboardContent({ profile, usingDemoData, range }: Props) {
           </div>
         </div>
       </div>
+
+      {/* ── Listener Archetype ──────────────────────────────────── */}
+      <section className="panel panel-glow flex flex-col gap-3 p-6 sm:flex-row sm:items-start sm:gap-8 sm:p-8">
+        <div className="shrink-0">
+          <p className="eyebrow">Your listener archetype</p>
+          <p className="mt-1 text-2xl font-semibold text-[var(--accent)]">{archetype.name}</p>
+        </div>
+        <p className="text-sm leading-7 text-[var(--text-muted)] sm:border-l sm:border-white/10 sm:pl-8">
+          {archetype.prose}
+        </p>
+      </section>
+
+      {/* ── Bubble Score Over Time ──────────────────────────────── */}
+      {visitHistory.length >= 2 ? (
+        <section className="panel flex flex-col gap-4 p-6 sm:p-8">
+          <div className="flex flex-col gap-1">
+            <p className="eyebrow">Filter bubble over time</p>
+            <h2 className="text-lg font-semibold text-[var(--text-strong)]">
+              Your score across visits
+            </h2>
+            {trendNarrative && (
+              <p className="text-sm leading-7 text-[var(--text-muted)]">{trendNarrative}</p>
+            )}
+          </div>
+          <BubbleScoreTrendChart
+            data={visitHistory.map(v => ({
+              label: new Date(v.visitedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+              score: v.bubbleScore,
+            }))}
+          />
+          <p className="text-xs text-[var(--text-muted)]">
+            Dashed lines mark tier boundaries: Wide Open / Narrowing / In the Loop / Deep in the Algorithm
+          </p>
+        </section>
+      ) : (
+        !usingDemoData && (
+          <section className="panel flex items-center gap-4 p-6">
+            <span className="text-2xl">📅</span>
+            <div>
+              <p className="text-sm font-medium text-[var(--text-strong)]">Come back next week</p>
+              <p className="text-sm text-[var(--text-muted)]">
+                Once you have a few visits logged, this section will show whether your filter bubble is widening or narrowing over time.
+              </p>
+            </div>
+          </section>
+        )
+      )}
 
       {/* ── Score hero ──────────────────────────────────────────── */}
       <section className="grid gap-5 lg:grid-cols-[1fr_272px]">
