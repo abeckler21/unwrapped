@@ -27,6 +27,19 @@ export function InsightShareButton({ href, label = "Share" }: Props) {
 
   async function handleClick() {
     const url = new URL(href, window.location.origin).toString()
+
+    // Use native share sheet on mobile if available
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ url })
+        return
+      } catch (err) {
+        // AbortError = user cancelled; anything else fall through to clipboard
+        if (err instanceof Error && err.name === "AbortError") return
+      }
+    }
+
+    // Clipboard fallback
     try {
       await copyText(url)
       setStatus("copied")

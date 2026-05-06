@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type Props = {
@@ -25,40 +24,59 @@ async function copyText(value: string) {
 }
 
 export function ShareActions({ shareHref }: Props) {
-  const [status, setStatus] = useState<"idle" | "copied" | "failed">("idle");
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
 
   useEffect(() => {
-    if (status === "idle") {
+    if (copyStatus === "idle") return;
+    const t = window.setTimeout(() => setCopyStatus("idle"), 2200);
+    return () => window.clearTimeout(t);
+  }, [copyStatus]);
+
+  async function handleShare() {
+    const url = new URL(shareHref, window.location.origin).toString();
+
+    // Native share sheet (iOS/Android, Chrome Android, Safari)
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ url });
+        return;
+      } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") return;
+        // Non-abort error: fall through to navigate
+      }
       return;
     }
 
-    const timeout = window.setTimeout(() => setStatus("idle"), 2200);
-    return () => window.clearTimeout(timeout);
-  }, [status]);
+    // Desktop fallback: navigate to the share page
+    window.location.href = url;
+  }
 
   async function handleCopy() {
     const url = new URL(shareHref, window.location.origin).toString();
-
     try {
       await copyText(url);
-      setStatus("copied");
+      setCopyStatus("copied");
     } catch {
-      setStatus("failed");
+      setCopyStatus("failed");
     }
   }
 
   return (
     <div className="mt-1 flex flex-col gap-2">
-      <Link href={shareHref} className="button-primary justify-center">
+      <button
+        type="button"
+        onClick={handleShare}
+        className="button-primary justify-center"
+      >
         Share your score
-      </Link>
+      </button>
       <button
         type="button"
         onClick={handleCopy}
         className="button-secondary justify-center text-sm"
         aria-live="polite"
       >
-        {status === "copied" ? "Copied" : status === "failed" ? "Copy failed" : "Copy link"}
+        {copyStatus === "copied" ? "Copied" : copyStatus === "failed" ? "Copy failed" : "Copy link"}
       </button>
     </div>
   );

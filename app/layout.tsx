@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getSpotifySession } from "@/lib/spotify/session";
+import { MobileNav } from "@/components/layout/mobile-nav";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -32,7 +33,11 @@ export default async function RootLayout({
                 </span>
               </Link>
 
-              <nav className="flex items-center gap-2 text-sm">
+              {/* Mobile nav (hamburger) */}
+              <MobileNav hasActiveSession={hasActiveSession} />
+
+              {/* Desktop nav — hidden below lg */}
+              <nav className="hidden lg:flex items-center gap-2 text-sm">
                 <Link
                   href="/dashboard"
                   className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-strong)] transition-colors"
