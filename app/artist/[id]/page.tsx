@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { notFound } from "next/navigation"
 
 import { AoiChart } from "@/components/artist/aoi-chart"
 import { CareerChart } from "@/components/artist/career-chart"

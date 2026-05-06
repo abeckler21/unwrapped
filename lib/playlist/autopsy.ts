@@ -11,11 +11,11 @@ export type PlaylistTrack = {
   albumImageUrl: string | null
   releaseYear: number
   durationMs: number
-  popularity: number
   isExplicit: boolean
 }
 
 export type PlaylistAutopsy = {
+  analysisVersion: 2
   playlistId: string
   name: string
   ownerName: string
@@ -26,17 +26,15 @@ export type PlaylistAutopsy = {
   // Scores
   algorithmScore: number
   scoreBreakdown: {
-    nameSignal: number       // 0-30
-    ownerSignal: number      // 0-20
-    popularitySkew: number   // 0-25
-    recencySignal: number    // 0-15
-    homogeneitySignal: number // 0-10
+    nameSignal: number       // 0-35
+    ownerSignal: number      // 0-25
+    recencySignal: number    // 0-25
+    homogeneitySignal: number // 0-15
   }
   classification: "Algorithmic" | "Human-curated" | "Mixed"
   // Analysis
   genreDistribution: { genre: string; count: number }[]
   eraDistribution: { era: string; count: number }[]
-  meanPopularity: number
   meanDurationMs: number
 }
 
@@ -91,7 +89,6 @@ type SpotifyTracksPage = {
         release_date: string
       }
       duration_ms: number
-      popularity: number
       explicit: boolean
     } | null
   }>
@@ -198,6 +195,7 @@ export async function analyzePlaylist(
   const currentYear = new Date().getFullYear()
   const tracks: PlaylistTrack[] = validTracks.map((t) => {
     const releaseYear = parseInt(t.album.release_date.slice(0, 4), 10) || currentYear
+    const durationMs = finiteNumber(t.duration_ms, 0)
     return {
       id: t.id,
       name: t.name,
@@ -205,8 +203,7 @@ export async function analyzePlaylist(
       albumName: t.album.name,
       albumImageUrl: t.album.images[0]?.url ?? null,
       releaseYear,
-      durationMs: t.duration_ms,
-      popularity: t.popularity,
+      durationMs,
       isExplicit: t.explicit,
     }
   })
@@ -216,17 +213,11 @@ export async function analyzePlaylist(
 
   const ALGO_NAME_RE =
     /discover weekly|daily mix|release radar|daylist|on repeat|time capsule/i
-  const nameSignal = ALGO_NAME_RE.test(playlist.name) ? 30 : 0
-  const ownerSignal = isSpotifyOwned ? 20 : 0
-
-  const meanPopularity =
-    tracks.length > 0
-      ? tracks.reduce((s, t) => s + t.popularity, 0) / tracks.length
-      : 50
-  const popularitySkew = Math.max(0, Math.min(25, ((meanPopularity - 45) / 55) * 25))
+  const nameSignal = ALGO_NAME_RE.test(playlist.name) ? 35 : 0
+  const ownerSignal = isSpotifyOwned ? 25 : 0
 
   const recentCount = tracks.filter((t) => currentYear - t.releaseYear <= 2).length
-  const recencySignal = tracks.length > 0 ? (recentCount / tracks.length) * 15 : 0
+  const recencySignal = tracks.length > 0 ? clamp((recentCount / tracks.length) * 25, 0, 25) : 0
 
   // Genre HHI for homogeneity
   const allGenres: string[] = []
@@ -240,10 +231,10 @@ export async function analyzePlaylist(
   for (const g of allGenres) genreCounts.set(g, (genreCounts.get(g) ?? 0) + 1)
   const total = allGenres.length || 1
   const hhi = [...genreCounts.values()].reduce((s, c) => s + (c / total) ** 2, 0)
-  const homogeneitySignal = Math.min(10, hhi * 10)
+  const homogeneitySignal = clamp(hhi * 15, 0, 15)
 
   const algorithmScore = Math.round(
-    nameSignal + ownerSignal + popularitySkew + recencySignal + homogeneitySignal,
+    nameSignal + ownerSignal + recencySignal + homogeneitySignal,
   )
   const classification: PlaylistAutopsy["classification"] =
     algorithmScore >= 55 ? "Algorithmic" : algorithmScore <= 20 ? "Human-curated" : "Mixed"
@@ -268,6 +259,7 @@ export async function analyzePlaylist(
     tracks.length > 0 ? tracks.reduce((s, t) => s + t.durationMs, 0) / tracks.length : 0
 
   return {
+    analysisVersion: 2,
     playlistId: playlist.id,
     name: playlist.name,
     ownerName: playlist.owner.display_name,
@@ -279,14 +271,12 @@ export async function analyzePlaylist(
     scoreBreakdown: {
       nameSignal,
       ownerSignal,
-      popularitySkew: Math.round(popularitySkew),
       recencySignal: Math.round(recencySignal),
       homogeneitySignal: Math.round(homogeneitySignal),
     },
     classification,
     genreDistribution,
     eraDistribution,
-    meanPopularity: Math.round(meanPopularity),
     meanDurationMs: Math.round(meanDurationMs),
   }
 }
@@ -308,7 +298,7 @@ async function fetchPlaylistTracks(playlistId: string, accessToken: string) {
 async function fetchPlaylistTracksFromSpotifyApi(playlistId: string, accessToken: string) {
   const rawTracks: SpotifyTracksPage["items"] = []
   let nextUrl: string | null =
-    `/playlists/${playlistId}/tracks?limit=100&fields=items(track(id,name,artists,album,duration_ms,popularity,explicit)),next`
+    `/playlists/${playlistId}/tracks?limit=100&fields=items(track(id,name,artists,album,duration_ms,explicit)),next`
 
   while (nextUrl && rawTracks.length < 200) {
     const fetchPath: string = nextUrl.startsWith("http")
@@ -371,7 +361,6 @@ async function fetchPlaylistTracksFromEmbed(playlistId: string, accessToken: str
         release_date: String(new Date().getFullYear()),
       },
       duration_ms: track.duration ?? 0,
-      popularity: 50,
       explicit: Boolean(track.isExplicit),
     } satisfies TrackSource
   })
@@ -426,6 +415,15 @@ function normalizeForMatch(value: string) {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, " ")
     .trim()
+}
+
+function finiteNumber(value: unknown, fallback: number) {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback
+}
+
+function clamp(value: number, min: number, max: number) {
+  if (!Number.isFinite(value)) return min
+  return Math.max(min, Math.min(max, value))
 }
 
 async function mapWithConcurrency<T, R>(

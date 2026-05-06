@@ -2,6 +2,12 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import type { PlaylistAutopsy } from "./autopsy"
 
 const TTL_HOURS = 6
+const SCORE_KEYS: Array<keyof PlaylistAutopsy["scoreBreakdown"]> = [
+  "nameSignal",
+  "ownerSignal",
+  "recencySignal",
+  "homogeneitySignal",
+]
 
 export async function readCachedPlaylistAutopsy(
   playlistId: string,
@@ -17,7 +23,8 @@ export async function readCachedPlaylistAutopsy(
     .gte("cached_at", cutoff)
     .single()
 
-  return (data?.analysis as PlaylistAutopsy) ?? null
+  const analysis = data?.analysis
+  return isValidPlaylistAutopsy(analysis) ? analysis : null
 }
 
 export async function writeCachedPlaylistAutopsy(
@@ -30,5 +37,20 @@ export async function writeCachedPlaylistAutopsy(
   await supabase.from("playlist_cache").upsert(
     { playlist_id: playlistId, analysis, cached_at: new Date().toISOString() },
     { onConflict: "playlist_id" },
+  )
+}
+
+function isValidPlaylistAutopsy(value: unknown): value is PlaylistAutopsy {
+  if (!value || typeof value !== "object") return false
+
+  const analysis = value as Partial<PlaylistAutopsy>
+
+  return (
+    analysis.analysisVersion === 2 &&
+    Number.isFinite(analysis.algorithmScore) &&
+    Number.isFinite(analysis.meanDurationMs) &&
+    Array.isArray(analysis.tracks) &&
+    Boolean(analysis.scoreBreakdown) &&
+    SCORE_KEYS.every((key) => Number.isFinite(analysis.scoreBreakdown?.[key]))
   )
 }

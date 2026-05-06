@@ -49,19 +49,6 @@ export function TrackList({ tracks }: Props) {
             {track.releaseYear}
           </span>
 
-          {/* Popularity bar */}
-          <div className="hidden w-16 sm:flex flex-col gap-1 items-end">
-            <div className="h-1 w-full rounded-full bg-white/10">
-              <div
-                className="h-full rounded-full bg-[var(--accent)]/50"
-                style={{ width: `${track.popularity}%` }}
-              />
-            </div>
-            <span className="text-xs tabular-nums text-[var(--text-muted)]">
-              {track.popularity}
-            </span>
-          </div>
-
           {/* Duration */}
           <span className="shrink-0 text-xs tabular-nums text-[var(--text-muted)]">
             {fmt(track.durationMs)}

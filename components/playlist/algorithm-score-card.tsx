@@ -13,17 +13,15 @@ const CLASSIFICATION_COLORS: Record<PlaylistAutopsy["classification"], string> =
 const SCORE_LABELS: Record<keyof PlaylistAutopsy["scoreBreakdown"], string> = {
   nameSignal: "Algorithmic name",
   ownerSignal: "Spotify-owned",
-  popularitySkew: "Popularity skew",
   recencySignal: "Recency bias",
   homogeneitySignal: "Genre homogeneity",
 }
 
 const SCORE_MAX: Record<keyof PlaylistAutopsy["scoreBreakdown"], number> = {
-  nameSignal: 30,
-  ownerSignal: 20,
-  popularitySkew: 25,
-  recencySignal: 15,
-  homogeneitySignal: 10,
+  nameSignal: 35,
+  ownerSignal: 25,
+  recencySignal: 25,
+  homogeneitySignal: 15,
 }
 
 function fmt(ms: number) {
@@ -89,17 +87,11 @@ export function AlgorithmScoreCard({ autopsy }: Props) {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-3 gap-4 border-t border-white/8 pt-5">
+      <div className="grid grid-cols-2 gap-4 border-t border-white/8 pt-5">
         <div>
           <p className="text-xs text-[var(--text-muted)]">Tracks</p>
           <p className="mt-1 text-xl font-semibold tabular-nums text-[var(--text-strong)]">
             {autopsy.tracks.length}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs text-[var(--text-muted)]">Avg popularity</p>
-          <p className="mt-1 text-xl font-semibold tabular-nums text-[var(--text-strong)]">
-            {autopsy.meanPopularity}
           </p>
         </div>
         <div>
