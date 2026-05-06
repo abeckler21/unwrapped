@@ -88,16 +88,24 @@ export async function analyzeArtist(
   // 1. Fetch artist profile
   const artist = await spotifyGet<SpotifyArtist>(`/artists/${artistId}`, accessToken)
 
-  // 2. Fetch all albums (albums + singles, up to 50)
-  const albumsPage = await spotifyGet<{ items: SpotifyAlbumSummary[] }>(
-    `/artists/${artistId}/albums?include_groups=album,single&limit=50&market=US`,
-    accessToken,
-  )
+  // 2. Fetch all albums/singles — paginate since Spotify's hard limit is 20 per page
+  const allAlbumItems: SpotifyAlbumSummary[] = []
+  let nextPath: string | null =
+    `/artists/${artistId}/albums?include_groups=album,single&limit=20&market=US`
+  while (nextPath && allAlbumItems.length < 100) {
+    const page: { items: SpotifyAlbumSummary[]; next: string | null } =
+      await spotifyGet(nextPath, accessToken)
+    allAlbumItems.push(...page.items)
+    // `next` is a full URL; extract path+query for spotifyGet
+    nextPath = page.next
+      ? page.next.replace("https://api.spotify.com/v1", "")
+      : null
+  }
 
   // Deduplicate by name (keep earliest), then limit to 40
   const seen = new Set<string>()
   const dedupedAlbums: SpotifyAlbumSummary[] = []
-  for (const a of albumsPage.items) {
+  for (const a of allAlbumItems) {
     const key = a.name.toLowerCase()
     if (!seen.has(key)) {
       seen.add(key)
