@@ -58,28 +58,6 @@ export default function PlaylistInputPage() {
           Analyze playlist →
         </button>
       </form>
-
-      <div className="panel p-6 flex flex-col gap-3">
-        <p className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">
-          Try these examples
-        </p>
-        {[
-          { label: "Today's Top Hits (Spotify)", url: "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M" },
-          { label: "Hot Country (Spotify)", url: "https://open.spotify.com/playlist/37i9dQZF1DXa7ZOS0gae9M" },
-        ].map((ex) => (
-          <button
-            key={ex.url}
-            type="button"
-            onClick={() => {
-              setInput(ex.url)
-              setError(null)
-            }}
-            className="text-left text-sm text-[var(--text-soft)] hover:text-[var(--accent)] transition-colors"
-          >
-            {ex.label}
-          </button>
-        ))}
-      </div>
     </main>
   )
 }
