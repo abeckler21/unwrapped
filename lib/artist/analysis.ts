@@ -162,8 +162,8 @@ export async function analyzeArtist(
   const maxYear = Math.max(...years)
   const genreDrift: string[] = []
   if (maxYear - minYear >= 4) {
-    const earlyGenres = artist.genres.slice(0, 2)
-    const lateGenres = artist.genres.slice(-2)
+    const earlyGenres = (artist.genres ?? []).slice(0, 2)
+    const lateGenres = (artist.genres ?? []).slice(-2)
     if (earlyGenres.join() !== lateGenres.join()) {
       genreDrift.push(...earlyGenres.map((g) => `early: ${g}`))
       genreDrift.push(...lateGenres.map((g) => `recent: ${g}`))
@@ -173,10 +173,10 @@ export async function analyzeArtist(
   return {
     artistId: artist.id,
     name: artist.name,
-    imageUrl: artist.images[0]?.url ?? null,
-    genres: artist.genres,
-    followers: artist.followers.total,
-    popularity: artist.popularity,
+    imageUrl: artist.images?.[0]?.url ?? null,
+    genres: artist.genres ?? [],
+    followers: artist.followers?.total ?? 0,
+    popularity: artist.popularity ?? 0,
     albums,
     popularityTrajectory,
     genreDrift,

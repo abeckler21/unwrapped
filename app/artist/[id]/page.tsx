@@ -110,7 +110,7 @@ export default async function ArtistPage({ params }: Props) {
               {analysis.name}
             </h1>
             <p className="mt-1 text-sm text-[var(--text-muted)]">
-              {analysis.genres.slice(0, 3).join(" · ")}
+              {(analysis.genres ?? []).slice(0, 3).join(" · ")}
             </p>
           </div>
         </div>
