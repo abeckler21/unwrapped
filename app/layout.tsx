@@ -61,6 +61,22 @@ export default async function RootLayout({
                     Escape
                   </Link>
                 )}
+                {hasActiveSession && (
+                  <Link
+                    href="/playlist"
+                    className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-strong)] transition-colors"
+                  >
+                    Playlist
+                  </Link>
+                )}
+                {hasActiveSession && (
+                  <Link
+                    href="/artist"
+                    className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-strong)] transition-colors"
+                  >
+                    Artist
+                  </Link>
+                )}
                 {hasActiveSession ? (
                   <form action="/api/auth/logout" method="post" className="ml-2">
                     <button type="submit" className="button-secondary text-sm">

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 
 import { GenreDistributionChart } from "@/components/visualizations/genre-distribution-chart";
@@ -266,8 +267,9 @@ export function DashboardContent({
 
           <div className="flex flex-col gap-0.5">
             {currentData.topArtists.slice(0, 10).map((artist, index) => (
-              <div
+              <Link
                 key={artist.id}
+                href={`/artist/${artist.id}`}
                 className="flex items-center gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-white/[0.04]"
               >
                 <span className="w-5 shrink-0 text-right text-xs tabular-nums text-[var(--text-muted)]">
@@ -295,7 +297,7 @@ export function DashboardContent({
                       : "genre unavailable"}
                   </p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </article>
