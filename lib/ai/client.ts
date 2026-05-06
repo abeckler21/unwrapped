@@ -2,6 +2,8 @@ import { createGroq } from '@ai-sdk/groq'
 import { createOpenAI } from '@ai-sdk/openai'
 import type { LanguageModel } from 'ai'
 
+import { env } from '@/lib/env'
+
 /**
  * Returns the appropriate LLM for the current environment.
  *
@@ -15,14 +17,14 @@ import type { LanguageModel } from 'ai'
  *   const { text } = await generateText({ model: getModel(), prompt: '...' })
  */
 export function getModel(): LanguageModel {
-  if (process.env.GROQ_API_KEY) {
-    const groq = createGroq({ apiKey: process.env.GROQ_API_KEY })
+  if (env.GROQ_API_KEY) {
+    const groq = createGroq({ apiKey: env.GROQ_API_KEY })
     return groq('llama-3.3-70b-versatile')
   }
 
   // Local dev: Ollama must be running (`ollama run llama3.2`)
   const ollama = createOpenAI({
-    baseURL: process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434/v1',
+    baseURL: env.OLLAMA_BASE_URL ?? 'http://localhost:11434/v1',
     apiKey: 'ollama',
     name: 'ollama',
   })

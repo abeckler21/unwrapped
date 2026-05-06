@@ -5,7 +5,7 @@ import { SESSION_COOKIE_NAMES } from "@/lib/spotify/constants";
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
 
 function getCookieSecurity() {
-  return process.env.NODE_ENV === "production";
+  return process.env.VERCEL_ENV !== undefined || process.env.NODE_ENV === "production";
 }
 
 export async function setOAuthCookies(state: string, verifier: string) {

@@ -1,0 +1,315 @@
+Security Audit — Unwrapped
+Generated: 2026-05-05
+================================================================================
+
+LAYER 1 — SECRETS AND ENV VARS
+================================================================================
+
+Git history scan: Only blank placeholder lines (SPOTIFY_CLIENT_SECRET=) from
+.env.example changes. No actual secrets leaked in history.
+
+.gitignore: .env* is correctly excluded. .env.example is correctly kept.
+.env.local exists on disk and is gitignored. Clean.
+
+Issue 1.1
+  LAYER:    1
+  LOCATION: lib/ai/client.ts:18 and lib/env.ts
+  SEVERITY: medium
+  PROBLEM:  GROQ_API_KEY and OLLAMA_BASE_URL are read directly from process.env
+            in client.ts but are absent from the centralized envSchema in env.ts,
+            meaning they're invisible to the setup-check system and have no
+            type-safety validation.
+  FIX:      Add GROQ_API_KEY: z.string().optional() and
+            OLLAMA_BASE_URL: z.string().url().optional() to envSchema in
+            lib/env.ts, then consume env.GROQ_API_KEY in client.ts.
+
+Issue 1.2
+  LAYER:    1
+  LOCATION: supabase/migrations/001_initial_schema.sql:11
+  SEVERITY: high
+  PROBLEM:  The users table stores refresh_token text in plaintext. The Supabase
+            service role key and the entire table are accessible to anyone who
+            obtains SUPABASE_SERVICE_ROLE_KEY, and (see Layer 2) potentially to
+            the anon key as well.
+  FIX:      Encrypt refresh tokens at rest using pgcrypto pgp_sym_encrypt before
+            insert, or move token storage entirely to httpOnly cookies (already
+            done for the active session) and stop persisting them to the DB.
+
+
+LAYER 2 — AUTH SURFACES AND RLS
+================================================================================
+
+API routes:
+
+  Route                    Auth Required?  Notes
+  GET /api/auth/login      No              Correct — initiates PKCE flow
+  GET /api/auth/callback   No              Validates PKCE state cookie
+  POST /api/auth/logout    No              Just clears cookies
+
+Pages:
+
+  Page              Auth enforced?  Behavior when unauthed
+  /dashboard        No              Shows mock demo data
+  /history          No              Shows mock genre data
+  /share/[userId]   No              Public by design
+  /setup            No              Public by design
+
+Issue 2.1
+  LAYER:    2
+  LOCATION: app/ — missing middleware.ts
+  SEVERITY: high
+  PROBLEM:  There is no Next.js middleware.ts at all. All "auth" is implemented
+            as per-page fallback logic (usingDemoData). This means there is no
+            centralized, guaranteed auth gate — any future route added to the app
+            will be unauthenticated by default with no safety net.
+  FIX:      Add middleware.ts with a matcher covering /dashboard and /history;
+            redirect to / if the session cookie is absent.
+
+Issue 2.2
+  LAYER:    2
+  LOCATION: supabase/migrations/ — all four migrations
+  SEVERITY: critical
+  PROBLEM:  Every table (spotify_profile_cache, users, user_analyses,
+            user_visits, user_archetypes, lastfm_artist_tags_cache,
+            genre_history_cache) is created without ENABLE ROW LEVEL SECURITY.
+            With Supabase, RLS-off tables are accessible to any role — including
+            the anon key (NEXT_PUBLIC_SUPABASE_ANON_KEY), which is public in the
+            browser. Anyone can directly query the Supabase REST API with that
+            key and read all cached user profiles, bubble scores, visit
+            histories, and — most critically — the plaintext refresh tokens in
+            the users table.
+  FIX:      For each table, run:
+              ALTER TABLE public.<table> ENABLE ROW LEVEL SECURITY;
+            Tables with user data (spotify_profile_cache, users, user_analyses,
+            user_visits, user_archetypes) should have a policy granting access
+            only via service role (effectively: no anon/authenticated policies,
+            just leave them enabled with no permissive policies). Non-user tables
+            (lastfm_artist_tags_cache, genre_history_cache) are fine as
+            read-only public.
+
+Issue 2.3
+  LAYER:    2
+  LOCATION: app/share/[userId]/page.tsx:21
+  SEVERITY: low
+  PROBLEM:  readCachedSpotifyProfile(userId, { ignoreTtl: true }) serves any
+            user's full cached profile (top artists, tracks, genres) to anyone
+            who knows or guesses a Spotify user ID. Spotify user IDs are often
+            human-readable usernames.
+  FIX:      This is intentional for sharing, so document it explicitly. At
+            minimum, add rate-limiting or a flag in the DB indicating the user
+            has opted in to sharing before serving their profile.
+
+
+LAYER 3 — AI INPUTS AND RATE LIMITS
+================================================================================
+
+LLM call surfaces:
+
+  Location                        Input source                    Bounded?
+  lib/ai/archetype.ts:86          Artist names, genres from       maxOutputTokens: 180
+                                  Spotify profile
+  lib/ai/genre-history.ts:82      genreName from Spotify/         maxOutputTokens: 1200
+                                  Last.fm tags
+
+Issue 3.1
+  LAYER:    3
+  LOCATION: lib/ai/genre-history.ts:82, lib/ai/archetype.ts:86
+  SEVERITY: high
+  PROBLEM:  There is no per-user, per-IP, or per-session rate limiting on LLM
+            calls. /history triggers up to 3 Groq API calls per page load with
+            no cache bypass protection. An unauthenticated user hitting /history
+            in a loop can burn through the Groq quota (or eventually incur
+            charges) at zero cost to themselves. The demo path
+            (usingDemoData: true) is skipped in archetype generation but not in
+            history generation.
+  FIX:      Gate the history and archetype LLM calls behind authentication
+            (if usingDemoData, return hardcoded fallback), and add a simple
+            in-memory or Supabase-backed per-IP rate limit (e.g., 5
+            requests/hour) before invoking the model.
+
+Issue 3.2
+  LAYER:    3
+  LOCATION: lib/ai/genre-history.ts:82
+  SEVERITY: low
+  PROBLEM:  The genreName from the user's Spotify/Last.fm artist tags is
+            interpolated directly into the prompt string with no sanitization.
+            Artist tags like "; ignore all previous instructions and..." would
+            be passed verbatim to the model. The output is parsed with Zod,
+            which limits damage, but the injection still reaches the model.
+  FIX:      Truncate and strip control characters from genreName before prompt
+            construction, e.g. genreName.slice(0, 50).replace(/[^\w\s\-]/g, '').
+
+Issue 3.3
+  LAYER:    3
+  LOCATION: lib/ai/genre-history.ts:62 (fetchWikimediaImage)
+  SEVERITY: medium
+  PROBLEM:  The imageQuery for Wikipedia API calls is produced by the LLM
+            (imageQuery: z.string()), and the resulting imageUrl is rendered in
+            next/image with unoptimized and no domain allowlist. A
+            prompt-injected imageQuery could cause the server to fetch from an
+            attacker-controlled URL (SSRF via Wikipedia API is low risk, but
+            the imageUrl from the Wikipedia response is then used directly).
+  FIX:      Validate that imageUrl matches ^https://upload\.wikimedia\.org/
+            before rendering, and configure remotePatterns in next.config.ts
+            for that domain only.
+
+
+LAYER 4 — DEV / PREVIEW / PROD ENVIRONMENTS
+================================================================================
+
+Issue 4.1
+  LAYER:    4
+  LOCATION: next.config.ts, missing Vercel config
+  SEVERITY: medium
+  PROBLEM:  There is no vercel.json or vercel.ts and no evidence of
+            environment-scoped variable configuration in the repo. It is NOT
+            verifiable from code whether production credentials are scoped to
+            "Production" only in the Vercel dashboard, or whether preview
+            deployments inherit production Supabase/Groq keys.
+  FIX:      Audit the Vercel dashboard to confirm SUPABASE_SERVICE_ROLE_KEY,
+            GROQ_API_KEY, and SPOTIFY_CLIENT_SECRET are scoped to "Production"
+            only, not "Preview". Create a separate Supabase project or at
+            minimum a separate schema for preview.
+
+Issue 4.2
+  LAYER:    4
+  LOCATION: lib/spotify/session.ts:8
+  SEVERITY: low
+  PROBLEM:  secure: process.env.NODE_ENV === "production" means cookies are not
+            Secure in preview deployments (which run on HTTPS) unless NODE_ENV
+            is explicitly set to "production" in preview.
+  FIX:      Use secure: process.env.VERCEL_ENV !== 'development' or
+            unconditionally set secure: true since Next.js/Vercel preview is
+            always HTTPS.
+
+
+LAYER 5 — PRE-COMMIT AND CI GATES
+================================================================================
+
+Issue 5.1
+  LAYER:    5
+  LOCATION: missing .husky/, missing .github/workflows/
+  SEVERITY: high
+  PROBLEM:  No pre-commit hooks and no CI pipeline exist. There is no automated
+            lint, type-check, build, secret scanning, or dependency review on
+            any push or PR. Secrets or broken code can be merged with no
+            automated check.
+  FIX:      Add a GitHub Actions workflow running:
+              npm run lint && npm run type-check && npm run build
+            on push/PR; add trufflesecurity/trufflehog or gitleaks for secret
+            scanning.
+
+package-lock.json is committed. Good.
+--no-verify not found anywhere. Good.
+
+
+LAYER 6 — MONITORING AND ERROR TRACKING
+================================================================================
+
+Issue 6.1
+  LAYER:    6
+  LOCATION: project-wide — missing
+  SEVERITY: medium
+  PROBLEM:  No error tracking (Sentry, Axiom, etc.) is integrated. Errors in
+            LLM calls, Spotify API failures, and Supabase write failures are
+            either silently caught (returning null/fallback) or logged only to
+            console.error, which disappears in production. There is no alerting
+            on auth failures or API errors.
+  FIX:      Add Sentry (or Vercel Log Drains with Axiom) to capture server-side
+            errors; at minimum add NEXT_PUBLIC_SENTRY_DSN and wrap the app in
+            the Next.js Sentry SDK.
+
+Issue 6.2
+  LAYER:    6
+  LOCATION: lib/ai/archetype.ts:163, lib/ai/genre-history.ts:190
+  SEVERITY: low
+  PROBLEM:  LLM calls are not logged — no record of which model was called, how
+            many tokens were used, or what the cost was. If Groq usage
+            unexpectedly spikes, there is no way to detect it.
+  FIX:      Log { model, promptTokens, completionTokens, userId } to Supabase
+            or Vercel logs on each LLM call.
+
+
+LAYER 7 — SUPPLY CHAIN
+================================================================================
+
+Dependency review: All packages (d3, recharts, zod, next, react,
+@supabase/supabase-js, ai, @ai-sdk/groq, @ai-sdk/openai) are established,
+legitimate packages with high weekly downloads and well-known maintainers.
+No typosquats or suspicious packages detected.
+
+Issue 7.1
+  LAYER:    7
+  LOCATION: package.json — next: 16.2.4
+  SEVERITY: medium
+  PROBLEM:  npm audit reports 2 moderate vulnerabilities: PostCSS XSS via
+            unescaped </style> in its CSS stringify output, located in next's
+            internal PostCSS version. The suggested fix (npm audit fix --force)
+            would downgrade to Next 9, which is not viable.
+  FIX:      Monitor the Next.js release track for a patched version; in the
+            meantime this is an internal build-time issue (PostCSS processes
+            your CSS, not user-submitted CSS), so exploit risk is low.
+
+Issue 7.2
+  LAYER:    7
+  LOCATION: CLAUDE.md, AGENTS.md — missing deny list
+  SEVERITY: medium
+  PROBLEM:  Neither CLAUDE.md nor AGENTS.md contains a deny list for sensitive
+            files. An AI agent operating in this repo has no explicit instruction
+            preventing it from reading .env.local, running vercel env pull, or
+            pushing to production.
+  FIX:      Add a deny list section to CLAUDE.md (see recommended list below).
+
+MCP servers: No MCP server configuration is present in
+.claude/settings.local.json (only tool permissions are defined). CLAUDE.md
+mentions Supabase MCP and Playwright MCP as development tools — these are
+presumably configured globally, not in the repo. Cannot enumerate their tool
+surfaces from this audit; verify manually.
+
+
+SUMMARY
+================================================================================
+
+  Severity    Count
+  --------    -----
+  Critical    1
+  High        4
+  Medium      5
+  Low         4
+  Total       14
+
+
+THE ONE FIX TO DO FIRST
+================================================================================
+
+Enable RLS on all Supabase tables (Issue 2.2).
+
+The NEXT_PUBLIC_SUPABASE_ANON_KEY is literally shipped to every browser. With
+RLS off on every table, the entire database is readable by anyone — including
+the users table that holds plaintext Spotify refresh tokens. A refresh token
+lets an attacker call the Spotify API as that user indefinitely. This is the
+highest-impact, lowest-effort fix: four ALTER TABLE ... ENABLE ROW LEVEL
+SECURITY statements. Do this before the project fair.
+
+
+WHAT THE AGENT SHOULD NOT BE TRUSTED WITH
+================================================================================
+
+Recommended additions to CLAUDE.md deny list:
+
+  ## Agent Deny List
+
+  These actions require explicit human confirmation before any AI agent
+  performs them:
+
+  - Read or write .env, .env.local, .env.* (any environment file with
+    real credentials)
+  - Run `vercel env pull` or any command that writes credentials to disk
+  - Run `vercel deploy --prod` or any production deployment
+  - Run `git push --force` or any destructive git operation
+  - Run `npm publish` or any package publish command
+  - Modify supabase/migrations/ (schema changes affect production data)
+  - Access or modify lib/supabase/admin.ts (touches service role key usage)
+  - Run any command that outputs or logs the value of
+    SUPABASE_SERVICE_ROLE_KEY, SPOTIFY_CLIENT_SECRET, GROQ_API_KEY,
+    or any other secret

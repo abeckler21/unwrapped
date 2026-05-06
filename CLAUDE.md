@@ -185,3 +185,18 @@ track_audio_features (spotify_track_id, tempo, energy_estimate, computed_at)
 See `AGENTS.md` for the full version-by-version goal breakdown.
 
 Current version target: **v1**
+
+---
+
+## Agent Deny List
+
+These actions require explicit human confirmation before any AI agent performs them:
+
+- Read or write `.env`, `.env.local`, `.env.*` (any file with real credentials)
+- Run `vercel env pull` or any command that writes credentials to disk
+- Run `vercel deploy --prod` or any production deployment
+- Run `git push --force` or any destructive git operation
+- Run `npm publish`
+- Modify `supabase/migrations/` (schema changes affect production data)
+- Access or modify `lib/supabase/admin.ts` (touches service role key usage)
+- Run any command that outputs the value of `SUPABASE_SERVICE_ROLE_KEY`, `SPOTIFY_CLIENT_SECRET`, `GROQ_API_KEY`, or any other secret

@@ -22,7 +22,9 @@ export default async function HistoryPage() {
   let failedGenres: string[] = [];
   let error: string | null = null;
 
-  try {
+  if (usingDemoData) {
+    error = "Log in with Spotify to generate genre histories for your actual top genres.";
+  } else try {
     const result = await getGenreHistoriesWithFailures(genresToFetch);
     histories = result.histories;
     failedGenres = result.failedGenres;

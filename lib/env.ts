@@ -9,6 +9,8 @@ const envSchema = z.object({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
   LASTFM_API_KEY: z.string().optional(),
+  GROQ_API_KEY: z.string().optional(),
+  OLLAMA_BASE_URL: z.string().url().optional(),
 });
 
 const parsedEnv = envSchema.parse({
@@ -20,6 +22,8 @@ const parsedEnv = envSchema.parse({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   LASTFM_API_KEY: process.env.LASTFM_API_KEY,
+  GROQ_API_KEY: process.env.GROQ_API_KEY,
+  OLLAMA_BASE_URL: process.env.OLLAMA_BASE_URL,
 });
 
 function isNonEmpty(value?: string) {

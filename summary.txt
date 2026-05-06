@@ -17,3 +17,33 @@ We handled several real-world Spotify edge cases. During testing, Spotify return
 We also fixed chart rendering issues. The original Recharts-based genre donut was fragile because of client-side container measurement problems, so we replaced it with a deterministic SVG donut that server-renders reliably. Other macro charts use a shared measured chart frame and element-size hook to avoid width warnings while staying responsive.
 
 Finally, we kept the project log updated throughout the work and verified the latest V1 slice with npm run type-check, npm run lint, and npm run build. The latest committed version includes the verified URL-driven listening-window switching, the redesigned dashboard, the cache completeness guard, and the fixed genre footprint chart.
+
+V2 Work Summary
+
+V2 moved Unwrapped from a local/demo-oriented V1 dashboard into a production-tested product at https://unwrapped-one.vercel.app. The deployment work included linking the repo to Vercel, pushing production and preview environment variables, and adding the production Spotify callback URL so OAuth could be tested in the same environment users would actually hit. The app also received an AI layer through the Vercel AI SDK, using Groq in production and Ollama-compatible local models in development.
+
+The main new dashboard feature is the listener archetype system. V2 added rule-based archetype assignment from the user's medium-term Filter Bubble Score, then uses an LLM to generate a sharper, personalized 2-3 sentence reading based on the user's score, top artists, top genres, algorithmic exposure, and temporal consistency. Archetypes are cached in Supabase for seven days. V2 also added temporal bubble tracking: each real user visit records a daily bubble score, the dashboard shows a score-over-time chart, and returning users get an AI-generated trend narrative.
+
+V2 also introduced the /history page, which turns the user's top genres into short music-history cards. For each genre, the app generates origin context, key pioneering figures, Wikimedia-sourced portraits when available, and a horizontal lineage rail showing how the genre developed over time. The history system is cached in Supabase for 30 days and was hardened after production debugging: structured-output issues with Groq were replaced with plain JSON generation and parsing, schema constraints were relaxed, and partial history failures now show a visible notice instead of silently dropping cards.
+
+After review feedback, V2 received a polish and reliability pass. The nav is now auth-aware, dashboard range switching is client-side and no longer causes a full server round-trip, loading skeletons were added for dashboard and history, share links can be copied directly, and confusing or unfinished UI copy was removed. The archetype card now clearly states it is based on the 6-month profile, sub-scores explain what high values mean, /history got cleaner navigation and monogram image fallbacks, and the lineage rail now truncates labels based on actual available spacing. All of this was verified with linting, type-checking, and production builds.
+
+V3 Work Summary
+
+V3 was a security hardening pass conducted as a full seven-layer audit of the production application. The audit covered secrets and environment variables, auth surfaces and database access control, AI input validation and rate limiting, dev/preview/prod environment separation, CI gates, monitoring, and supply chain. Fourteen issues were identified across all severity levels, and the critical and high/medium issues were resolved in this version.
+
+The most critical fix was enabling Row Level Security on all Supabase tables. Every table in the schema had been created without RLS, meaning the publicly-exposed anon key (NEXT_PUBLIC_SUPABASE_ANON_KEY) could have been used to query any table directly via the Supabase REST API. This included the users table, which stores Spotify refresh tokens in plaintext. RLS was enabled on all seven tables, with permissive read-only policies added only for the two shared non-user cache tables (lastfm_artist_tags_cache and genre_history_cache).
+
+The /history page was previously making up to three Groq API calls per page load with no authentication requirement. An unauthenticated visitor could loop the page and exhaust the Groq quota. The fix gates all LLM calls behind authentication: unauthenticated visitors now see a prompt to log in rather than triggering model calls, matching the behavior already in place for the archetype system on the dashboard.
+
+GROQ_API_KEY and OLLAMA_BASE_URL were being read directly from process.env in lib/ai/client.ts, bypassing the centralized env schema in lib/env.ts. Both variables were added to the schema and client.ts was updated to consume them through the validated env object.
+
+A middleware.ts file was added. The app intentionally shows demo data to unauthenticated visitors on page routes, so the middleware does not redirect from /dashboard or /history. Instead it establishes the pattern for protecting future API routes: any route under /api/user/ requires a valid session cookie and returns 401 otherwise.
+
+The Wikimedia image URL returned by the Wikipedia API (based on an LLM-generated query string) was being rendered without domain validation. A check was added to reject any image URL that does not begin with https://upload.wikimedia.org/, and the domain was added to next.config.ts as the only allowed remote image pattern.
+
+The session cookie Secure flag was previously tied to NODE_ENV === "production", which left preview deployments on Vercel (which run over HTTPS) with non-Secure cookies. The check was updated to also treat any deployment with a VERCEL_ENV variable set as production-equivalent.
+
+An agent deny list was added to CLAUDE.md. The list enumerates actions that require explicit human confirmation before any AI agent performs them, including reading or writing environment files, running production deployments, modifying Supabase migrations, and outputting secret values.
+
+A security_audit.txt file was committed to the repository with the full fourteen-issue audit report, severity ratings, and recommended fixes for all remaining lower-priority items.

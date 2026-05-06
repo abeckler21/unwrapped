@@ -68,7 +68,9 @@ async function fetchWikimediaImage(query: string): Promise<string | null> {
     const pages = json?.query?.pages ?? {}
     const page = Object.values(pages)[0] as Record<string, unknown>
     const thumb = page?.thumbnail as { source?: string } | undefined
-    return thumb?.source ?? null
+    const src = thumb?.source ?? null
+    if (src && !src.startsWith('https://upload.wikimedia.org/')) return null
+    return src
   } catch {
     return null
   }
