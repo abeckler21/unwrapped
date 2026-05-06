@@ -1,4 +1,5 @@
 import { SPOTIFY_API_BASE_URL } from "@/lib/spotify/constants"
+import { getLastFmArtistTags } from "@/lib/lastfm/cache"
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -41,6 +42,18 @@ export type PlaylistAutopsy = {
 
 // ── Spotify fetch helpers ────────────────────────────────────────────────────
 
+class SpotifyRequestError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly path: string,
+    public readonly detail: string,
+  ) {
+    super(message)
+    this.name = "SpotifyRequestError"
+  }
+}
+
 async function spotifyGet<T>(path: string, accessToken: string): Promise<T> {
   const res = await fetch(`${SPOTIFY_API_BASE_URL}${path}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -48,7 +61,12 @@ async function spotifyGet<T>(path: string, accessToken: string): Promise<T> {
   })
   if (!res.ok) {
     const detail = await res.text()
-    throw new Error(`Spotify ${path} failed (${res.status}): ${detail}`)
+    throw new SpotifyRequestError(
+      `Spotify ${path} failed (${res.status}): ${detail}`,
+      res.status,
+      path,
+      detail,
+    )
   }
   return (await res.json()) as T
 }
@@ -58,7 +76,7 @@ type SpotifyPlaylist = {
   name: string
   owner: { id: string; display_name: string }
   images: { url: string }[]
-  tracks: { total: number }
+  tracks?: { total: number }
 }
 
 type SpotifyTracksPage = {
@@ -85,6 +103,40 @@ type SpotifyArtist = {
   genres: string[]
 }
 
+type SpotifySearchTracksResponse = {
+  tracks: {
+    items: NonNullable<SpotifyTracksPage["items"][number]["track"]>[]
+  }
+}
+
+type EmbedTrack = {
+  uri: string
+  title: string
+  subtitle: string
+  isExplicit?: boolean
+  duration?: number
+  entityType?: string
+}
+
+type SpotifyEmbedPayload = {
+  props?: {
+    pageProps?: {
+      state?: {
+        data?: {
+          entity?: {
+            trackList?: EmbedTrack[]
+            coverArt?: {
+              sources?: { url: string }[]
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+type TrackSource = NonNullable<SpotifyTracksPage["items"][number]["track"]>
+
 // ── Main analysis function ───────────────────────────────────────────────────
 
 export async function analyzePlaylist(
@@ -97,36 +149,49 @@ export async function analyzePlaylist(
     accessToken,
   )
 
-  // 2. Fetch all tracks (paginated, up to 200)
-  const rawTracks: SpotifyTracksPage["items"] = []
-  let nextUrl: string | null = `/playlists/${playlistId}/tracks?limit=100&fields=items(track(id,name,artists,album,duration_ms,popularity,explicit)),next`
-
-  while (nextUrl && rawTracks.length < 200) {
-    // nextUrl may be a full URL or relative path
-    const fetchPath: string = nextUrl.startsWith("http")
-      ? nextUrl.replace(SPOTIFY_API_BASE_URL, "")
-      : nextUrl
-    const page = await spotifyGet<SpotifyTracksPage>(fetchPath, accessToken)
-    rawTracks.push(...page.items)
-    nextUrl = page.next
-  }
-
-  const validTracks = rawTracks
-    .map((item) => item.track)
-    .filter((t): t is NonNullable<typeof t> => Boolean(t?.id))
+  // 2. Fetch all tracks (paginated, up to 200). Spotify sometimes returns 403
+  // for public playlist items while still allowing the public embed to render.
+  const validTracks = await fetchPlaylistTracks(playlistId, accessToken)
 
   // 3. Batch-fetch artist genres (up to 50 per request)
-  const artistIds = [...new Set(validTracks.flatMap((t) => t.artists.map((a) => a.id)))]
+  const artistIds = [
+    ...new Set(
+      validTracks
+        .flatMap((t) => t.artists.map((a) => a.id))
+        .filter((id) => /^[A-Za-z0-9]{22}$/.test(id)),
+    ),
+  ]
   const artistGenreMap = new Map<string, string[]>()
-  for (let i = 0; i < artistIds.length; i += 50) {
-    const batch = artistIds.slice(i, i + 50)
-    const { artists } = await spotifyGet<{ artists: SpotifyArtist[] }>(
-      `/artists?ids=${batch.join(",")}`,
-      accessToken,
-    )
-    for (const artist of artists) {
-      artistGenreMap.set(artist.id, artist.genres)
+  const artistNamesById = new Map(
+    validTracks.flatMap((track) => track.artists.map((artist) => [artist.id, artist.name] as const)),
+  )
+
+  try {
+    for (let i = 0; i < artistIds.length; i += 50) {
+      const batch = artistIds.slice(i, i + 50)
+      const { artists } = await spotifyGet<{ artists: SpotifyArtist[] }>(
+        `/artists?ids=${batch.join(",")}`,
+        accessToken,
+      )
+      for (const artist of artists) {
+        artistGenreMap.set(artist.id, artist.genres)
+      }
     }
+  } catch {
+    await mapWithConcurrency(
+      [...artistNamesById.entries()],
+      5,
+      async ([artistId, artistName]) => {
+        try {
+          const tags = await getLastFmArtistTags(artistName)
+          if (tags?.normalizedTags.length) {
+            artistGenreMap.set(artistId, tags.normalizedTags)
+          }
+        } catch {
+          // Missing artist genres should lower confidence, not break the autopsy.
+        }
+      },
+    )
   }
 
   // 4. Build track list
@@ -208,7 +273,7 @@ export async function analyzePlaylist(
     ownerName: playlist.owner.display_name,
     isSpotifyOwned,
     coverImageUrl: playlist.images[0]?.url ?? null,
-    totalTracks: playlist.tracks.total,
+    totalTracks: playlist.tracks?.total ?? tracks.length,
     tracks,
     algorithmScore,
     scoreBreakdown: {
@@ -227,6 +292,156 @@ export async function analyzePlaylist(
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+async function fetchPlaylistTracks(playlistId: string, accessToken: string) {
+  try {
+    return await fetchPlaylistTracksFromSpotifyApi(playlistId, accessToken)
+  } catch (error) {
+    if (!(error instanceof SpotifyRequestError) || error.status !== 403) {
+      throw error
+    }
+
+    return fetchPlaylistTracksFromEmbed(playlistId, accessToken)
+  }
+}
+
+async function fetchPlaylistTracksFromSpotifyApi(playlistId: string, accessToken: string) {
+  const rawTracks: SpotifyTracksPage["items"] = []
+  let nextUrl: string | null =
+    `/playlists/${playlistId}/tracks?limit=100&fields=items(track(id,name,artists,album,duration_ms,popularity,explicit)),next`
+
+  while (nextUrl && rawTracks.length < 200) {
+    const fetchPath: string = nextUrl.startsWith("http")
+      ? nextUrl.replace(SPOTIFY_API_BASE_URL, "")
+      : nextUrl
+    const page = await spotifyGet<SpotifyTracksPage>(fetchPath, accessToken)
+    rawTracks.push(...page.items)
+    nextUrl = page.next
+  }
+
+  return rawTracks
+    .map((item) => item.track)
+    .filter((track): track is TrackSource => Boolean(track?.id))
+}
+
+async function fetchPlaylistTracksFromEmbed(playlistId: string, accessToken: string) {
+  const res = await fetch(`https://open.spotify.com/embed/playlist/${playlistId}`, {
+    headers: {
+      "User-Agent": "Unwrapped Playlist Autopsy",
+    },
+    cache: "no-store",
+  })
+
+  if (!res.ok) {
+    throw new Error(`Spotify public embed failed (${res.status}).`)
+  }
+
+  const html = await res.text()
+  const jsonText = html.match(
+    /<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/,
+  )?.[1]
+
+  if (!jsonText) {
+    throw new Error("Spotify public embed did not include playlist track data.")
+  }
+
+  const payload = JSON.parse(jsonText) as SpotifyEmbedPayload
+  const embedTracks =
+    payload.props?.pageProps?.state?.data?.entity?.trackList
+      ?.filter((track) => track.entityType === "track")
+      .slice(0, 200) ?? []
+
+  if (!embedTracks.length) {
+    throw new Error("Spotify public embed did not include playable tracks.")
+  }
+
+  const enriched = await mapWithConcurrency(embedTracks, 5, async (track) => {
+    const searched = await searchTrack(track, accessToken)
+    if (searched) return searched
+
+    const id = track.uri.replace("spotify:track:", "")
+    const artistName = track.subtitle || "Unknown artist"
+    return {
+      id,
+      name: track.title,
+      artists: [{ id: `embed:${artistName.toLowerCase()}`, name: artistName }],
+      album: {
+        name: "Unknown album",
+        images: [],
+        release_date: String(new Date().getFullYear()),
+      },
+      duration_ms: track.duration ?? 0,
+      popularity: 50,
+      explicit: Boolean(track.isExplicit),
+    } satisfies TrackSource
+  })
+
+  return enriched
+}
+
+async function searchTrack(track: EmbedTrack, accessToken: string) {
+  const firstArtist = track.subtitle.split(",")[0]?.trim() ?? track.subtitle
+  const queries = [
+    `track:${track.title} artist:${firstArtist}`,
+    `${track.title} ${firstArtist}`,
+  ]
+
+  for (const query of queries) {
+    try {
+      const result = await spotifyGet<SpotifySearchTracksResponse>(
+        `/search?type=track&limit=3&q=${encodeURIComponent(query)}`,
+        accessToken,
+      )
+      const best = result.tracks.items.find((candidate) =>
+        isLikelySameTrack(candidate, track, firstArtist),
+      )
+
+      if (best) {
+        return best
+      }
+    } catch {
+      return null
+    }
+  }
+
+  return null
+}
+
+function isLikelySameTrack(candidate: TrackSource, track: EmbedTrack, firstArtist: string) {
+  const candidateName = normalizeForMatch(candidate.name)
+  const trackName = normalizeForMatch(track.title)
+  const candidateArtists = candidate.artists.map((artist) => normalizeForMatch(artist.name))
+  const artistName = normalizeForMatch(firstArtist)
+
+  return (
+    (candidateName === trackName || candidateName.includes(trackName) || trackName.includes(candidateName)) &&
+    candidateArtists.some((name) => name === artistName || name.includes(artistName) || artistName.includes(name))
+  )
+}
+
+function normalizeForMatch(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T) => Promise<R>,
+) {
+  const results: R[] = []
+
+  for (let i = 0; i < items.length; i += concurrency) {
+    const chunk = items.slice(i, i + concurrency)
+    results.push(...(await Promise.all(chunk.map(mapper))))
+  }
+
+  return results
+}
 
 /** Extract a Spotify playlist ID from a URL or plain ID string. */
 export function extractPlaylistId(input: string): string | null {
