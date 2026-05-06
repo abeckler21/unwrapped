@@ -12,6 +12,7 @@
   "dependencies": {
     "@ai-sdk/groq": "^3.0.38",
     "@ai-sdk/openai": "^3.0.60",
+    "@sentry/nextjs": "^10.51.0",
     "@supabase/supabase-js": "^2.104.1",
     "ai": "^6.0.175",
     "d3": "^7.9.0",

@@ -79,9 +79,13 @@ async function fetchWikimediaImage(query: string): Promise<string | null> {
 // ── LLM generation ───────────────────────────────────────────────────────────
 
 async function generateGenreHistory(genreName: string): Promise<GenreHistory> {
-  const { text } = await generateText({
-    model: getModel(),
-    prompt: `You are a music historian. Generate a JSON object describing the history of the "${genreName}" genre. Output ONLY valid JSON, no markdown, no explanation.
+  // Sanitize genreName before prompt interpolation to prevent prompt injection
+  const safeGenreName = genreName.slice(0, 50).replace(/[^\w\s\-]/g, '').trim()
+
+  const model = getModel()
+  const { text, usage } = await generateText({
+    model,
+    prompt: `You are a music historian. Generate a JSON object describing the history of the "${safeGenreName}" genre. Output ONLY valid JSON, no markdown, no explanation.
 
 Required shape:
 {
@@ -113,6 +117,14 @@ Rules:
 - Output ONLY the JSON object, nothing else.`,
     maxOutputTokens: 1200,
   })
+
+  console.log(JSON.stringify({
+    event: 'llm_call',
+    model: (model as { modelId?: string }).modelId ?? 'unknown',
+    usage: { promptTokens: usage.inputTokens, completionTokens: usage.outputTokens },
+    genre: safeGenreName,
+    cached: false,
+  }))
 
   // Strip any accidental markdown code fences
   const clean = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim()

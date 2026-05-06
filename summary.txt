@@ -47,3 +47,17 @@ The session cookie Secure flag was previously tied to NODE_ENV === "production",
 An agent deny list was added to CLAUDE.md. The list enumerates actions that require explicit human confirmation before any AI agent performs them, including reading or writing environment files, running production deployments, modifying Supabase migrations, and outputting secret values.
 
 A security_audit.txt file was committed to the repository with the full fourteen-issue audit report, severity ratings, and recommended fixes for all remaining lower-priority items.
+
+After the security audit, V3 completed the remaining seven lower-priority items, bringing all fourteen issues to resolved status.
+
+A GitHub Actions CI pipeline was added at .github/workflows/ci.yml. The workflow runs on every push and pull request to main. It runs npm ci, then lint, type-check, and build in sequence. A separate secret-scanning job runs TruffleHog against the git history on every push to catch any accidental credential leaks before they are merged.
+
+Sentry was integrated for server-side error visibility. The @sentry/nextjs package was installed and three config files were created: sentry.server.config.ts, sentry.edge.config.ts, and sentry.client.config.ts. The Next.js config was wrapped with withSentryConfig. Sentry is a no-op unless NEXT_PUBLIC_SENTRY_DSN is set as a Vercel environment variable — no real DSN is hardcoded in the repo. This gives the app production-grade error alerting for API route failures, LLM call errors, and Supabase write failures once the DSN is configured.
+
+LLM call logging was added to both lib/ai/archetype.ts and lib/ai/genre-history.ts. After each generateText call, a structured JSON object is written to stdout: event, model ID, input and output token counts, and a genre or userId identifier. Vercel captures stdout as structured logs, so usage spikes are now visible in the Vercel dashboard without any additional logging infrastructure.
+
+The genreName parameter in generateGenreHistory was sanitized before prompt interpolation. The value is now truncated to 50 characters and stripped of anything outside word characters, spaces, and hyphens before being embedded in the LLM prompt. This limits the reach of any prompt-injection attempt via a malformed Last.fm artist tag.
+
+The refresh_token column was dropped from the users table. A search across the entire codebase confirmed that no application code writes to this column — refresh tokens are stored exclusively in httpOnly session cookies. Migration 006_drop_refresh_token.sql removes the column, eliminating the plaintext token-at-rest risk flagged in Issue 1.2. The migration must be run manually in the Supabase SQL editor.
+
+Issue 4.1 (Vercel environment variable scoping) cannot be automated — it requires a manual audit of the Vercel dashboard. Instructions for confirming that SUPABASE_SERVICE_ROLE_KEY, SPOTIFY_CLIENT_SECRET, and GROQ_API_KEY are scoped to Production only are provided as a follow-up action item for the developer.

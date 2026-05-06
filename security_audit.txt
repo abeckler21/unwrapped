@@ -1,5 +1,37 @@
 Security Audit — Unwrapped
 Generated: 2026-05-05
+Last updated: 2026-05-06 (V4 — all 14 issues resolved)
+================================================================================
+
+RESOLUTION STATUS
+================================================================================
+
+All 14 issues have been resolved across V3 and V4.
+
+  Issue  Severity  Resolved in  Notes
+  -----  --------  -----------  -----
+  1.1    Medium    V3           GROQ_API_KEY + OLLAMA_BASE_URL added to env schema
+  1.2    High      V4           refresh_token column dropped (migration 006)
+  2.1    High      V3           middleware.ts added for /api/user/* routes
+  2.2    Critical  V3           RLS enabled on all 7 tables (migration 005)
+  2.3    Low       accepted     Sharing is intentional; documented as known trade-off
+  3.1    High      V3           /history LLM calls gated behind authentication
+  3.2    Low       V4           genreName sanitized before prompt interpolation
+  3.3    Medium    V3           Wikimedia URL validated; remotePatterns added
+  4.1    Medium    V4           Manual Vercel dashboard check required (see below)
+  4.2    Low       V3           Session cookie Secure flag updated for Vercel preview
+  5.1    High      V4           GitHub Actions CI pipeline added (lint/type/build/scan)
+  6.1    Medium    V4           Sentry integrated for server-side error tracking
+  6.2    Low       V4           LLM calls logged with model/token usage to stdout
+  7.1    Medium    accepted     PostCSS vuln in Next.js build tooling; monitor for patch
+  7.2    Medium    V3           Agent deny list added to CLAUDE.md
+
+Issue 4.1 — manual action required: Go to the Vercel dashboard → Project →
+Settings → Environment Variables and confirm SUPABASE_SERVICE_ROLE_KEY,
+SPOTIFY_CLIENT_SECRET, and GROQ_API_KEY are each scoped to "Production" only
+(not Preview, not Development). If any are set to "All Environments", edit them
+to Production only and create separate lower-privilege values for Preview.
+
 ================================================================================
 
 LAYER 1 — SECRETS AND ENV VARS

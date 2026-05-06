@@ -96,11 +96,20 @@ Listener data:
 
 Write the 2–3 sentence prose reading now. Refer to the listener in second person ("you"). Do not mention the archetype name itself — let the description speak for it. Do not start with "You are" — vary the opening.`
 
-  const { text } = await generateText({
-    model: getModel(),
+  const model = getModel()
+  const { text, usage } = await generateText({
+    model,
     prompt,
     maxOutputTokens: 180,
   })
+
+  console.log(JSON.stringify({
+    event: 'llm_call',
+    model: (model as { modelId?: string }).modelId ?? 'unknown',
+    usage: { promptTokens: usage.inputTokens, completionTokens: usage.outputTokens },
+    userId: profile.userId,
+    cached: false,
+  }))
 
   return text.trim()
 }
