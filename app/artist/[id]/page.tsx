@@ -11,12 +11,6 @@ type Props = {
   params: Promise<{ id: string }>
 }
 
-function fmtFollowers(n: number) {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1_000) return `${Math.round(n / 1_000)}K`
-  return String(n)
-}
-
 function msToMin(ms: number) {
   const s = ms / 1000
   return `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`
@@ -80,6 +74,15 @@ export default async function ArtistPage({ params }: Props) {
     analysis.albums[0],
   )
 
+  const years = analysis.albums.map((a) => a.releaseYear)
+  const careerStart = years.length ? Math.min(...years) : null
+  const careerEnd = years.length ? Math.max(...years) : null
+
+  const allTracks = analysis.albums.reduce((s, a) => s + a.trackCount, 0)
+  const overallAvgMs = analysis.albums.length
+    ? analysis.albums.reduce((s, a) => s + a.avgDurationMs * a.trackCount, 0) / allTracks
+    : 0
+
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-10 px-5 py-8 sm:px-8">
 
@@ -116,18 +119,22 @@ export default async function ArtistPage({ params }: Props) {
         </div>
 
         <div className="mt-5 flex flex-wrap gap-6">
-          <div>
-            <p className="text-xs text-[var(--text-muted)]">Followers</p>
-            <p className="mt-0.5 text-xl font-semibold tabular-nums text-[var(--text-strong)]">
-              {fmtFollowers(analysis.followers)}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-[var(--text-muted)]">Popularity</p>
-            <p className="mt-0.5 text-xl font-semibold tabular-nums text-[var(--text-strong)]">
-              {analysis.popularity}
-            </p>
-          </div>
+          {careerStart && careerEnd && (
+            <div>
+              <p className="text-xs text-[var(--text-muted)]">Career span</p>
+              <p className="mt-0.5 text-xl font-semibold tabular-nums text-[var(--text-strong)]">
+                {careerStart === careerEnd ? String(careerStart) : `${careerStart}–${careerEnd}`}
+              </p>
+            </div>
+          )}
+          {overallAvgMs > 0 && (
+            <div>
+              <p className="text-xs text-[var(--text-muted)]">Avg song length</p>
+              <p className="mt-0.5 text-xl font-semibold tabular-nums text-[var(--text-strong)]">
+                {msToMin(overallAvgMs)}
+              </p>
+            </div>
+          )}
           <div>
             <p className="text-xs text-[var(--text-muted)]">Albums analyzed</p>
             <p className="mt-0.5 text-xl font-semibold tabular-nums text-[var(--text-strong)]">
