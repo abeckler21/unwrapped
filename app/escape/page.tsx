@@ -41,6 +41,7 @@ export default async function EscapePage() {
 
   const trackUris = recs.map((r) => r.track.uri)
   const userGenres = bubbleScore.genreDistribution.slice(0, 3).map((g) => g.genre)
+  const isDepthMode = recs.length > 0 && recs.every((r) => r.mode === "depth")
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-10 px-5 py-8 sm:px-8">
@@ -56,26 +57,42 @@ export default async function EscapePage() {
         <h1 className="mt-4 text-4xl font-bold text-[var(--text-strong)] sm:text-5xl">
           Escape the Bubble
         </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-muted)]">
-          Your profile is heavy on{" "}
-          <span className="text-[var(--text-soft)]">{userGenres.join(", ")}</span>.
-          These artists live outside that centroid — low enough popularity to be invisible to the
-          algorithm, deep enough catalogs to be worth exploring.
-        </p>
-        <p className="mt-2 text-xs text-[var(--text-muted)]">
-          Anti-algorithm score: higher = less likely the algorithm would ever surface this artist to you.
-        </p>
+        {isDepthMode ? (
+          <>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-muted)]">
+              Your taste already spans{" "}
+              <span className="text-[var(--text-soft)]">{userGenres.join(", ")}</span>{" "}
+              and more — no obvious genre gaps. Instead, here are artists buried so deep in your own
+              genres that the algorithm has never once surfaced them.
+            </p>
+            <p className="mt-2 text-xs text-[var(--text-muted)]">
+              Anti-algorithm score: higher = more algorithmically invisible, even within your own taste.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-muted)]">
+              Your profile is heavy on{" "}
+              <span className="text-[var(--text-soft)]">{userGenres.join(", ")}</span>.
+              These artists live outside that centroid — low enough popularity to be invisible to the
+              algorithm, deep enough catalogs to be worth exploring.
+            </p>
+            <p className="mt-2 text-xs text-[var(--text-muted)]">
+              Anti-algorithm score: higher = less likely the algorithm would ever surface this artist to you.
+            </p>
+          </>
+        )}
       </section>
 
-      {/* No recs fallback */}
+      {/* No recs fallback — only shown if both gap and depth modes find nothing */}
       {recs.length === 0 && (
         <div className="panel p-8 text-center">
           <p className="text-xl font-semibold text-[var(--text-strong)]">
-            Your profile is already unusually broad.
+            Spotify returned no qualifying artists right now.
           </p>
           <p className="mt-3 text-sm text-[var(--text-muted)]">
-            We couldn&apos;t find enough gap genres to generate recommendations.
-            This is rare — your listening spans most of what we check against.
+            This can happen when Spotify&apos;s search returns limited results for your genres.
+            Try again in a few minutes — results vary by region and catalog availability.
           </p>
           <Link href="/dashboard" className="button-secondary mt-6 inline-flex text-sm">
             Back to dashboard
@@ -84,15 +101,19 @@ export default async function EscapePage() {
       )}
 
       {/* Recommendations by genre */}
-      {[...byGenre.entries()].map(([genre, genreRecs]) => (
+      {[...byGenre.entries()].map(([genre, genreRecs]) => {
+        const sectionMode = genreRecs[0]?.mode ?? "gap"
+        return (
         <section key={genre} className="flex flex-col gap-4">
           <div>
-            <p className="eyebrow">Gap genre</p>
+            <p className="eyebrow">{sectionMode === "depth" ? "Hidden depth" : "Gap genre"}</p>
             <h2 className="mt-1 text-xl font-semibold capitalize text-[var(--text-strong)]">
               {genre}
             </h2>
             <p className="mt-1 text-xs text-[var(--text-muted)]">
-              Absent from your top 8 genres · filtered out of your recommendations
+              {sectionMode === "depth"
+                ? "Within your own taste · popularity 5–20 · algorithmically invisible"
+                : "Absent from your top 8 genres · filtered out of your recommendations"}
             </p>
           </div>
 
@@ -102,7 +123,8 @@ export default async function EscapePage() {
             ))}
           </div>
         </section>
-      ))}
+        )
+      })}
 
       {/* Playlist CTA */}
       {recs.length > 0 && (
@@ -124,10 +146,10 @@ export default async function EscapePage() {
       {/* Methodology note */}
       {recs.length > 0 && (
         <footer className="border-t border-white/10 pt-6 text-xs text-[var(--text-muted)]">
-          Recommendations are generated by searching Spotify for artists tagged with genres absent
-          from your profile, then filtering to popularity 20–55 (known but not algorithmically
-          prominent) and scoring by how far they sit from your listening centroid.
-          Results are cached for 24 hours. Track selection is each artist&apos;s Spotify top track
+          {isDepthMode
+            ? "Your taste spans most tracked genres, so recommendations use depth mode: artists in your own genres filtered to popularity 5–20 (algorithmically invisible). Scored by obscurity + subgenre novelty."
+            : "Recommendations are generated by searching Spotify for artists tagged with genres absent from your profile, then filtering to popularity 20–55 (known but not algorithmically prominent) and scoring by how far they sit from your listening centroid."}
+          {" "}Results are cached for 24 hours. Track selection is each artist&apos;s Spotify top track
           in your market.
         </footer>
       )}
