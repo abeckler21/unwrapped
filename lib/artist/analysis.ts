@@ -88,15 +88,11 @@ export async function analyzeArtist(
   // 1. Fetch artist profile
   const artist = await spotifyGet<SpotifyArtist>(`/artists/${artistId}`, accessToken)
 
-  // 2. Fetch all albums/singles — paginate since Spotify's hard limit is 20 per page
+  // 2. Fetch all albums/singles (paginated, up to 100)
   const allAlbumItems: SpotifyAlbumSummary[] = []
-  const albumParams = new URLSearchParams({
-    include_groups: "album,single",
-    limit: "20",
-    market: "US",
-  })
+  // Note: include_groups comma must NOT be URL-encoded; pass raw query string
   let nextUrl: string | null =
-    `${SPOTIFY_API_BASE_URL}/artists/${artistId}/albums?${albumParams.toString()}`
+    `${SPOTIFY_API_BASE_URL}/artists/${artistId}/albums?include_groups=album,single`
   while (nextUrl && allAlbumItems.length < 100) {
     const res = await fetch(nextUrl, {
       headers: { Authorization: `Bearer ${accessToken}` },
