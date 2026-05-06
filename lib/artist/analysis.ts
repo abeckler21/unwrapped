@@ -90,16 +90,25 @@ export async function analyzeArtist(
 
   // 2. Fetch all albums/singles — paginate since Spotify's hard limit is 20 per page
   const allAlbumItems: SpotifyAlbumSummary[] = []
-  let nextPath: string | null =
-    `/artists/${artistId}/albums?include_groups=album,single&limit=20&market=US`
-  while (nextPath && allAlbumItems.length < 100) {
-    const page: { items: SpotifyAlbumSummary[]; next: string | null } =
-      await spotifyGet(nextPath, accessToken)
+  const albumParams = new URLSearchParams({
+    include_groups: "album,single",
+    limit: "20",
+    market: "US",
+  })
+  let nextUrl: string | null =
+    `${SPOTIFY_API_BASE_URL}/artists/${artistId}/albums?${albumParams.toString()}`
+  while (nextUrl && allAlbumItems.length < 100) {
+    const res = await fetch(nextUrl, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: "no-store",
+    })
+    if (!res.ok) {
+      const detail = await res.text()
+      throw new Error(`Spotify albums fetch failed (${res.status}): ${detail}`)
+    }
+    const page = (await res.json()) as { items: SpotifyAlbumSummary[]; next: string | null }
     allAlbumItems.push(...page.items)
-    // `next` is a full URL; extract path+query for spotifyGet
-    nextPath = page.next
-      ? page.next.replace("https://api.spotify.com/v1", "")
-      : null
+    nextUrl = page.next ?? null
   }
 
   // Deduplicate by name (keep earliest), then limit to 40
