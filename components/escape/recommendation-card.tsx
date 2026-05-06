@@ -81,19 +81,6 @@ export function RecommendationCard({ rec }: Props) {
         </p>
       </div>
 
-      {/* Popularity context */}
-      <div className="flex items-center gap-2">
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
-          <div
-            className="h-full rounded-full bg-[var(--accent)]/50"
-            style={{ width: `${artist.popularity}%` }}
-          />
-        </div>
-        <p className="shrink-0 text-xs text-[var(--text-muted)]">
-          {artist.popularity}/100 popularity
-        </p>
-      </div>
-
     </article>
   )
 }

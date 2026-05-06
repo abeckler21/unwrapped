@@ -20,7 +20,9 @@ export async function readCachedEscapeRecs(
   const ageMs = Date.now() - new Date(data.generated_at).getTime()
   if (ageMs > CACHE_TTL_MS) return null
 
-  return data.recommendations as EscapeRecommendation[]
+  return isValidEscapeRecommendations(data.recommendations)
+    ? data.recommendations
+    : null
 }
 
 export async function writeCachedEscapeRecs(
@@ -35,4 +37,16 @@ export async function writeCachedEscapeRecs(
     recommendations,
     generated_at: new Date().toISOString(),
   })
+}
+
+function isValidEscapeRecommendations(value: unknown): value is EscapeRecommendation[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (rec) =>
+        rec &&
+        typeof rec === "object" &&
+        (rec as Partial<EscapeRecommendation>).recommendationVersion === 2,
+    )
+  )
 }
