@@ -7,6 +7,7 @@ import { useState } from "react";
 import { GenreDistributionChart } from "@/components/visualizations/genre-distribution-chart";
 import { MacroTrendChart } from "@/components/visualizations/macro-trend-chart";
 import { ShareActions } from "@/components/dashboard/share-actions";
+import { InsightShareButton } from "@/components/dashboard/insight-share-button";
 import {
   genreShareTrend,
   macroSources,
@@ -102,6 +103,11 @@ export function DashboardContent({
           <p className="mt-2 max-w-44 text-xs leading-5 text-[var(--text-muted)]">
             Based on your 6-month listening profile.
           </p>
+          {!usingDemoData && (
+            <div className="mt-3">
+              <InsightShareButton href={`${shareHref}/archetype`} label="Share archetype" />
+            </div>
+          )}
         </div>
         <p className="text-sm leading-7 text-[var(--text-muted)] sm:border-l sm:border-white/10 sm:pl-8">
           {archetype.prose}
@@ -166,6 +172,11 @@ export function DashboardContent({
               Higher means your taste is converging around the same genres and artists on repeat.
               The algorithm feeds you more of what you already play, narrowing the field over time.
             </p>
+            {!usingDemoData && (
+              <div className="mt-4">
+                <InsightShareButton href={`${shareHref}/bubble`} label="Share score" />
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-3 gap-3">
@@ -220,7 +231,12 @@ export function DashboardContent({
 
         <article className="panel flex flex-col gap-5">
           <div>
-            <p className="eyebrow">Genre footprint</p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="eyebrow">Genre footprint</p>
+              {!usingDemoData && score.hasGenreMetadata && (
+                <InsightShareButton href={`${shareHref}/fingerprint`} label="Share" />
+              )}
+            </div>
             <h2 className="mt-1 text-lg font-semibold text-[var(--text-strong)]">Your taste, mapped</h2>
           </div>
 
