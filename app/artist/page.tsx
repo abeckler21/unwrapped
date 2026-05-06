@@ -8,7 +8,6 @@ type SearchResult = {
   id: string
   name: string
   genres: string[]
-  followers: number
   imageUrl: string | null
 }
 
@@ -115,18 +114,8 @@ export default function ArtistSearchPage() {
               )}
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-[var(--text-strong)]">{artist.name}</p>
-                <p className="mt-0.5 truncate text-xs text-[var(--text-muted)]">
+                <p className="mt-1 truncate text-sm text-[var(--text-muted)]">
                   {artist.genres.join(", ") || "No genres listed"}
-                </p>
-              </div>
-              <div className="shrink-0 text-right">
-                <p className="text-xs text-[var(--text-muted)]">Followers</p>
-                <p className="text-sm font-semibold tabular-nums text-[var(--text-strong)]">
-                  {artist.followers >= 1_000_000
-                    ? `${(artist.followers / 1_000_000).toFixed(1)}M`
-                    : artist.followers >= 1_000
-                      ? `${Math.round(artist.followers / 1_000)}K`
-                      : artist.followers}
                 </p>
               </div>
             </button>

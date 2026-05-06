@@ -59,15 +59,12 @@ type SpotifyAlbumSummary = {
   total_tracks: number
 }
 
-type SpotifyAlbumDetail = SpotifyAlbumSummary & {
-  popularity: number
-  tracks: {
-    items: Array<{
-      id: string
-      duration_ms: number
-      artists: { id: string }[]
-    }>
-  }
+type SpotifyTracksPage = {
+  items: Array<{
+    id: string
+    duration_ms: number
+    artists: { id: string }[]
+  }>
 }
 
 // ── AOI formula ──────────────────────────────────────────────────────────────
@@ -119,57 +116,45 @@ export async function analyzeArtist(
   }
   const albumsToAnalyze = dedupedAlbums.slice(0, 40)
 
-  // 3. Batch-fetch full album details (20 per request)
-  const albumDetails: SpotifyAlbumDetail[] = []
-  for (let i = 0; i < albumsToAnalyze.length; i += 20) {
-    const batch = albumsToAnalyze.slice(i, i + 20)
-    const { albums } = await spotifyGet<{ albums: SpotifyAlbumDetail[] }>(
-      `/albums?ids=${batch.map((a) => a.id).join(",")}`,
-      accessToken,
-    )
-    albumDetails.push(...albums)
-  }
+  // 3. Fetch tracks for each album individually (batch /albums endpoint returns 403 in dev mode)
+  const albums: AlbumAnalysis[] = []
+  for (const albumSummary of albumsToAnalyze) {
+    try {
+      const tracksPage = await spotifyGet<SpotifyTracksPage>(
+        `/albums/${albumSummary.id}/tracks?limit=50`,
+        accessToken,
+      )
+      const tracks = tracksPage.items ?? []
+      if (tracks.length === 0) continue
 
-  // 4. Build album analyses
-  const albums: AlbumAnalysis[] = albumDetails
-    .map((album): AlbumAnalysis | null => {
-      const tracks = album.tracks?.items ?? []
-      if (tracks.length === 0) return null
-
-      const avgDurationMs =
-        tracks.reduce((s, t) => s + t.duration_ms, 0) / tracks.length
-      const collabTracks = tracks.filter((t) => t.artists.length >= 2).length
+      const avgDurationMs = tracks.reduce((s, t) => s + (t.duration_ms ?? 0), 0) / tracks.length
+      const collabTracks = tracks.filter((t) => (t.artists?.length ?? 1) >= 2).length
       const collabRate = collabTracks / tracks.length
       const aoi = computeAoi(avgDurationMs, collabRate)
-      const releaseYear = parseInt(album.release_date.slice(0, 4), 10) || 2000
-      const albumType = (album.album_type === "single" ? "single" :
-        album.album_type === "compilation" ? "compilation" : "album") as AlbumAnalysis["albumType"]
+      const releaseYear = parseInt(albumSummary.release_date.slice(0, 4), 10) || 2000
+      const albumType = (albumSummary.album_type === "single" ? "single" :
+        albumSummary.album_type === "compilation" ? "compilation" : "album") as AlbumAnalysis["albumType"]
 
-      return {
-        id: album.id,
-        name: album.name,
+      albums.push({
+        id: albumSummary.id,
+        name: albumSummary.name,
         albumType,
         releaseYear,
-        coverImageUrl: album.images[0]?.url ?? null,
+        coverImageUrl: albumSummary.images[0]?.url ?? null,
         trackCount: tracks.length,
         avgDurationMs: Math.round(avgDurationMs),
         collabRate: Math.round(collabRate * 100) / 100,
-        popularity: album.popularity,
+        popularity: 0,
         aoi,
-      }
-    })
-    .filter((a): a is AlbumAnalysis => a !== null)
-    .sort((a, b) => a.releaseYear - b.releaseYear)
-
-  // 5. Popularity trajectory (one data point per year, pick highest pop album)
-  const popByYear = new Map<number, number>()
-  for (const a of albums) {
-    const existing = popByYear.get(a.releaseYear) ?? 0
-    if (a.popularity > existing) popByYear.set(a.releaseYear, a.popularity)
+      })
+    } catch {
+      // Skip albums we can't fetch tracks for
+    }
   }
-  const popularityTrajectory = [...popByYear.entries()]
-    .sort((a, b) => a[0] - b[0])
-    .map(([year, popularity]) => ({ year, popularity }))
+  albums.sort((a, b) => a.releaseYear - b.releaseYear)
+
+  // 4. Popularity trajectory — not available without batch album fetch, omit
+  const popularityTrajectory: { year: number; popularity: number }[] = []
 
   // 6. Genre drift (first vs last 3 years of releases)
   const years = albums.map((a) => a.releaseYear)

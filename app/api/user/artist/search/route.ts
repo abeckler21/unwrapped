@@ -55,7 +55,6 @@ export async function GET(request: NextRequest) {
           id: a.id,
           name: a.name,
           genres,
-          followers: a.followers?.total ?? 0,
           imageUrl: a.images?.[0]?.url ?? null,
         }
       })
