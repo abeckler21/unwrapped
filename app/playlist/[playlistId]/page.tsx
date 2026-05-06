@@ -1,12 +1,11 @@
 import Link from "next/link"
-import { notFound } from "next/navigation"
 
 import { AlgorithmScoreCard } from "@/components/playlist/algorithm-score-card"
 import { EraChart } from "@/components/playlist/era-chart"
 import { TrackList } from "@/components/playlist/track-list"
 import { readCachedPlaylistAutopsy, writeCachedPlaylistAutopsy } from "@/lib/playlist/cache"
 import { analyzePlaylist } from "@/lib/playlist/autopsy"
-import { getSpotifySession } from "@/lib/spotify/session"
+import { getValidAccessToken } from "@/lib/spotify/session"
 
 type Props = {
   params: Promise<{ playlistId: string }>
@@ -14,9 +13,9 @@ type Props = {
 
 export default async function PlaylistAutopsyPage({ params }: Props) {
   const { playlistId } = await params
-  const session = await getSpotifySession()
+  const accessToken = await getValidAccessToken()
 
-  if (!session.accessToken) {
+  if (!accessToken) {
     return (
       <main className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-5 py-8 sm:px-8">
         <p className="text-sm text-[var(--text-muted)]">
@@ -31,17 +30,40 @@ export default async function PlaylistAutopsyPage({ params }: Props) {
 
   // Try cache first
   let autopsy = await readCachedPlaylistAutopsy(playlistId)
+  let fetchError: string | null = null
 
   if (!autopsy) {
     try {
-      autopsy = await analyzePlaylist(playlistId, session.accessToken)
+      autopsy = await analyzePlaylist(playlistId, accessToken)
       await writeCachedPlaylistAutopsy(playlistId, autopsy)
-    } catch {
-      notFound()
+    } catch (err) {
+      fetchError = err instanceof Error ? err.message : "Failed to analyze this playlist."
     }
   }
 
-  if (!autopsy) notFound()
+  if (fetchError || !autopsy) {
+    return (
+      <main className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-5 py-8 sm:px-8">
+        <Link
+          href="/playlist"
+          className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-[var(--text-soft)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+        >
+          ← Analyze another playlist
+        </Link>
+        <div className="panel p-6">
+          <p className="text-sm font-semibold text-[var(--text-strong)]">Could not load this playlist</p>
+          <p className="mt-2 text-sm text-[var(--text-muted)]">
+            {fetchError ?? "Playlist not found."}
+          </p>
+          <p className="mt-3 text-xs text-[var(--text-muted)]">
+            Make sure the playlist is public and the URL is correct. Personal playlists like Discover Weekly
+            are private to each account and cannot be analyzed by URL — try pasting the URL from{" "}
+            <span className="text-[var(--text-soft)]">open.spotify.com</span> while you have it open.
+          </p>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-10 px-5 py-8 sm:px-8">

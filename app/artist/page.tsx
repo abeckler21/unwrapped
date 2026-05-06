@@ -33,11 +33,20 @@ export default function ArtistSearchPage() {
       setError(null)
       try {
         const res = await fetch(`/api/user/artist/search?q=${encodeURIComponent(value.trim())}`)
-        if (!res.ok) throw new Error("Search failed")
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({})) as { error?: string }
+          if (res.status === 401) {
+            setError("Session expired — please log out and log back in.")
+          } else {
+            setError(body.error ?? `Search failed (${res.status})`)
+          }
+          setResults([])
+          return
+        }
         const data = (await res.json()) as { results: SearchResult[] }
         setResults(data.results)
       } catch {
-        setError("Search failed. Make sure you're logged in.")
+        setError("Network error — check your connection and try again.")
         setResults([])
       } finally {
         setLoading(false)

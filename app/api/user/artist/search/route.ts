@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { SPOTIFY_API_BASE_URL } from "@/lib/spotify/constants"
-import { getSpotifySession } from "@/lib/spotify/session"
+import { getValidAccessToken } from "@/lib/spotify/session"
 
 type SpotifySearchResult = {
   artists: {
@@ -16,9 +16,9 @@ type SpotifySearchResult = {
 }
 
 export async function GET(request: NextRequest) {
-  const session = await getSpotifySession()
+  const accessToken = await getValidAccessToken()
 
-  if (!session.spotifyUserId || !session.accessToken) {
+  if (!accessToken) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -29,11 +29,13 @@ export async function GET(request: NextRequest) {
 
   const res = await fetch(
     `${SPOTIFY_API_BASE_URL}/search?type=artist&q=${encodeURIComponent(q)}&limit=5`,
-    { headers: { Authorization: `Bearer ${session.accessToken}` }, cache: "no-store" },
+    { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store" },
   )
 
   if (!res.ok) {
-    return NextResponse.json({ error: "Spotify search failed" }, { status: 502 })
+    const spotifyError = await res.json().catch(() => ({})) as { error?: { message?: string } }
+    const detail = spotifyError?.error?.message ?? `Spotify returned ${res.status}`
+    return NextResponse.json({ error: detail }, { status: 502 })
   }
 
   const data = (await res.json()) as SpotifySearchResult

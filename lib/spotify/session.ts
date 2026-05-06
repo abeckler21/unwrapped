@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 
+import { refreshSpotifyAccessToken } from "@/lib/spotify/auth";
 import { SESSION_COOKIE_NAMES } from "@/lib/spotify/constants";
 
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
@@ -94,6 +95,35 @@ export async function getSpotifySession() {
     tokenExpiresAt: cookieStore.get(SESSION_COOKIE_NAMES.tokenExpiresAt)?.value,
     spotifyUserId: cookieStore.get(SESSION_COOKIE_NAMES.spotifyUserId)?.value,
   };
+}
+
+/**
+ * Returns a valid access token, refreshing automatically if the stored token
+ * has expired. Returns null if no refresh token is available or refresh fails.
+ */
+export async function getValidAccessToken(): Promise<string | null> {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get(SESSION_COOKIE_NAMES.accessToken)?.value;
+
+  if (accessToken) return accessToken;
+
+  // Token cookie expired — try to refresh
+  const refreshToken = cookieStore.get(SESSION_COOKIE_NAMES.refreshToken)?.value;
+  const spotifyUserId = cookieStore.get(SESSION_COOKIE_NAMES.spotifyUserId)?.value;
+  if (!refreshToken || !spotifyUserId) return null;
+
+  try {
+    const tokens = await refreshSpotifyAccessToken(refreshToken);
+    await setSpotifySessionCookies({
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token ?? refreshToken,
+      expiresInSeconds: tokens.expires_in,
+      spotifyUserId,
+    });
+    return tokens.access_token;
+  } catch {
+    return null;
+  }
 }
 
 export async function clearSpotifySessionCookies() {

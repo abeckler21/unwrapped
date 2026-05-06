@@ -50,7 +50,7 @@ export default function PlaylistInputPage() {
             setInput(e.target.value)
             setError(null)
           }}
-          placeholder="https://open.spotify.com/playlist/37i9dQZF1DX…"
+          placeholder="https://open.spotify.com/playlist/…"
           className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-[var(--text-strong)] placeholder-[var(--text-muted)] outline-none focus:border-[var(--accent)] transition-colors"
         />
         {error && <p className="text-xs text-red-400">{error}</p>}
@@ -64,8 +64,8 @@ export default function PlaylistInputPage() {
           Try these examples
         </p>
         {[
-          { label: "Discover Weekly (Spotify)", url: "https://open.spotify.com/playlist/37i9dQZEVXcJZyENOWUFo7" },
           { label: "Today's Top Hits (Spotify)", url: "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M" },
+          { label: "Hot Country (Spotify)", url: "https://open.spotify.com/playlist/37i9dQZF1DXa7ZOS0gae9M" },
         ].map((ex) => (
           <button
             key={ex.url}
