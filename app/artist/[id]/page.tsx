@@ -170,13 +170,38 @@ export default async function ArtistPage({ params }: Props) {
 
       {/* Algorithm Optimization Index */}
       <section className="panel p-6 sm:p-8">
-        <p className="eyebrow">Algorithm Optimization Index</p>
+        <p className="eyebrow">Algorithm Optimization Index (AOI)</p>
         <h2 className="mt-1 text-lg font-semibold text-[var(--text-strong)]">
-          AOI per album
+          How algorithmically engineered is each album?
         </h2>
-        <p className="mt-1 text-xs text-[var(--text-muted)]">
-          0–100. Higher = shorter songs + more features/collabs. Measures how algorithmically engineered each album is.
-        </p>
+
+        <div className="mt-3 rounded-xl border border-white/8 bg-white/[0.03] p-4 text-sm leading-6 text-[var(--text-muted)]">
+          <p>
+            <span className="font-medium text-[var(--text-soft)]">What it measures:</span>{" "}
+            AOI scores each album from 0 to 100 based on two structural features that the music
+            industry has converged on to game streaming algorithms — song length and collaboration rate.
+          </p>
+          <ul className="mt-3 space-y-1.5 pl-4 list-disc marker:text-white/20">
+            <li>
+              <span className="text-[var(--text-soft)]">Song length (60% weight).</span>{" "}
+              Streaming platforms pay per stream, not per minute — so shorter songs mean more streams
+              per listening session. A 3-minute song scores 1.0; a 5-minute song scores 0.
+            </li>
+            <li>
+              <span className="text-[var(--text-soft)]">Collaboration rate (40% weight).</span>{" "}
+              Features and guest artists expose a track to multiple fan bases simultaneously,
+              which the algorithm reads as a signal of broad appeal. Scored as the fraction of
+              tracks with two or more credited artists.
+            </li>
+          </ul>
+          <p className="mt-3">
+            A high AOI doesn&apos;t mean the music is bad — it means the album&apos;s structure
+            reflects industry pressure to optimize for platform metrics. Comparing AOI across an
+            artist&apos;s discography reveals whether their sound has shifted toward the algorithm
+            over time.
+          </p>
+        </div>
+
         <div className="mt-5">
           <AoiChart albums={analysis.albums} />
         </div>
