@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { SPOTIFY_API_BASE_URL } from "@/lib/spotify/constants"
+import { fetchLastFmArtistTags } from "@/lib/lastfm/client"
 import { getValidAccessToken } from "@/lib/spotify/session"
 
 type SpotifySearchResult = {
@@ -40,14 +41,25 @@ export async function GET(request: NextRequest) {
     }
 
     const data = (await res.json()) as SpotifySearchResult
-    const results = (data.artists?.items ?? []).map((a) => ({
-      id: a.id,
-      name: a.name,
-      genres: a.genres?.slice(0, 3) ?? [],
-      popularity: a.popularity ?? 0,
-      followers: a.followers?.total ?? 0,
-      imageUrl: a.images?.[0]?.url ?? null,
-    }))
+    const items = data.artists?.items ?? []
+
+    // Enrich genres from LastFM (Spotify search often returns empty genres)
+    const results = await Promise.all(
+      items.map(async (a) => {
+        let genres: string[] = a.genres?.slice(0, 3) ?? []
+        if (genres.length === 0) {
+          const tags = await fetchLastFmArtistTags(a.name).catch(() => null)
+          genres = tags?.normalizedTags.slice(0, 3) ?? []
+        }
+        return {
+          id: a.id,
+          name: a.name,
+          genres,
+          followers: a.followers?.total ?? 0,
+          imageUrl: a.images?.[0]?.url ?? null,
+        }
+      })
+    )
 
     return NextResponse.json({ results })
   } catch (err) {

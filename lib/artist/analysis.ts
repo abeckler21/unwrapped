@@ -124,7 +124,7 @@ export async function analyzeArtist(
   for (let i = 0; i < albumsToAnalyze.length; i += 20) {
     const batch = albumsToAnalyze.slice(i, i + 20)
     const { albums } = await spotifyGet<{ albums: SpotifyAlbumDetail[] }>(
-      `/albums?ids=${batch.map((a) => a.id).join(",")}&market=US`,
+      `/albums?ids=${batch.map((a) => a.id).join(",")}`,
       accessToken,
     )
     albumDetails.push(...albums)
