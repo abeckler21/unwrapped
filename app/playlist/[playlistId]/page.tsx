@@ -168,7 +168,8 @@ export default async function PlaylistAutopsyPage({ params }: Props) {
       {/* Methodology */}
       <footer className="border-t border-white/10 pt-6 text-xs text-[var(--text-muted)]">
         Algorithm Score is computed from: playlist name patterns (max 35), Spotify ownership (max 25),
-        recency bias (tracks from last 2 years, max 25), and genre homogeneity via HHI (max 15).
+        recency bias (tracks from last 2 years, max 25), genre homogeneity via HHI (max 5), and
+        duration consistency (SD of track lengths — narrow SD signals algorithmic curation, max 10).
         Results cached for 6 hours.
       </footer>
 

@@ -15,7 +15,7 @@ export type PlaylistTrack = {
 }
 
 export type PlaylistAutopsy = {
-  analysisVersion: 2
+  analysisVersion: 3
   playlistId: string
   name: string
   ownerName: string
@@ -26,10 +26,11 @@ export type PlaylistAutopsy = {
   // Scores
   algorithmScore: number
   scoreBreakdown: {
-    nameSignal: number       // 0-35
-    ownerSignal: number      // 0-25
-    recencySignal: number    // 0-25
-    homogeneitySignal: number // 0-15
+    nameSignal: number          // 0-35
+    ownerSignal: number         // 0-25
+    recencySignal: number       // 0-25
+    homogeneitySignal: number   // 0-5
+    durationConsistency: number // 0-10
   }
   classification: "Algorithmic" | "Human-curated" | "Mixed"
   // Analysis
@@ -231,10 +232,25 @@ export async function analyzePlaylist(
   for (const g of allGenres) genreCounts.set(g, (genreCounts.get(g) ?? 0) + 1)
   const total = allGenres.length || 1
   const hhi = [...genreCounts.values()].reduce((s, c) => s + (c / total) ** 2, 0)
-  const homogeneitySignal = clamp(hhi * 15, 0, 15)
+  const homogeneitySignal = clamp(hhi * 5, 0, 5)
+
+  // Duration Consistency: algorithmically assembled playlists cluster around 3:00–3:30.
+  // Human-curated playlists tend to have more temporal variety.
+  let durationConsistency = 0
+  if (tracks.length >= 5) {
+    const durations = tracks.map((t) => t.durationMs)
+    const meanMs = durations.reduce((s, v) => s + v, 0) / durations.length
+    const variance = durations.reduce((s, v) => s + (v - meanMs) ** 2, 0) / durations.length
+    const sd = Math.sqrt(variance)
+    if (sd < 25_000) {
+      durationConsistency = 10
+    } else if (sd < 50_000) {
+      durationConsistency = 5
+    }
+  }
 
   const algorithmScore = Math.round(
-    nameSignal + ownerSignal + recencySignal + homogeneitySignal,
+    nameSignal + ownerSignal + recencySignal + homogeneitySignal + durationConsistency,
   )
   const classification: PlaylistAutopsy["classification"] =
     algorithmScore >= 55 ? "Algorithmic" : algorithmScore <= 20 ? "Human-curated" : "Mixed"
@@ -259,7 +275,7 @@ export async function analyzePlaylist(
     tracks.length > 0 ? tracks.reduce((s, t) => s + t.durationMs, 0) / tracks.length : 0
 
   return {
-    analysisVersion: 2,
+    analysisVersion: 3,
     playlistId: playlist.id,
     name: playlist.name,
     ownerName: playlist.owner.display_name,
@@ -273,6 +289,7 @@ export async function analyzePlaylist(
       ownerSignal,
       recencySignal: Math.round(recencySignal),
       homogeneitySignal: Math.round(homogeneitySignal),
+      durationConsistency,
     },
     classification,
     genreDistribution,

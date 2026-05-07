@@ -7,6 +7,7 @@ const SCORE_KEYS: Array<keyof PlaylistAutopsy["scoreBreakdown"]> = [
   "ownerSignal",
   "recencySignal",
   "homogeneitySignal",
+  "durationConsistency",
 ]
 
 export async function readCachedPlaylistAutopsy(
@@ -46,7 +47,7 @@ function isValidPlaylistAutopsy(value: unknown): value is PlaylistAutopsy {
   const analysis = value as Partial<PlaylistAutopsy>
 
   return (
-    analysis.analysisVersion === 2 &&
+    analysis.analysisVersion === 3 &&
     Number.isFinite(analysis.algorithmScore) &&
     Number.isFinite(analysis.meanDurationMs) &&
     Array.isArray(analysis.tracks) &&

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { GenreDistributionChart } from "@/components/visualizations/genre-distribution-chart";
+import { ListeningProfileChart } from "@/components/visualizations/listening-profile-chart";
 import { MacroTrendChart } from "@/components/visualizations/macro-trend-chart";
 import { ShareActions } from "@/components/dashboard/share-actions";
 import { InsightShareButton } from "@/components/dashboard/insight-share-button";
@@ -16,6 +17,7 @@ import {
 } from "@/lib/data/macro-trends";
 import { formatDuration, formatPercent } from "@/lib/format";
 import { BubbleScoreTrendChart } from "@/components/visualizations/bubble-score-trend-chart";
+import { computeListeningProfile, ALGORITHMIC_ARCHETYPE } from "@/lib/analysis/listening-profile";
 import type { Archetype } from "@/lib/ai/archetype";
 import type { BubbleScoreResult, ScoreBreakdownItem } from "@/lib/analysis/bubble-score";
 import type { VisitRecord } from "@/lib/analysis/visit-tracking";
@@ -67,6 +69,8 @@ export function DashboardContent({
     url.searchParams.set("range", nextRange);
     window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
   }
+
+  const listeningProfile = computeListeningProfile(profile, range);
 
   return (
     <div className="flex flex-col gap-10">
@@ -373,6 +377,64 @@ export function DashboardContent({
               )}
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ── Listening Profile ───────────────────────────────────── */}
+      <section className="panel flex flex-col gap-5 p-6 sm:p-8">
+        <div>
+          <p className="eyebrow">Listening Profile</p>
+          <h2 className="mt-1 text-lg font-semibold text-[var(--text-strong)]">
+            Your sound vs. the algorithm&apos;s ideal
+          </h2>
+          <p className="mt-1 text-sm text-[var(--text-muted)]">
+            How the shape of your listening compares to the algorithm&apos;s ideal — based on
+            song lengths, release dates, and genre breadth.
+          </p>
+        </div>
+
+        <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-8">
+          <ListeningProfileChart
+            profile={listeningProfile}
+            comparison={ALGORITHMIC_ARCHETYPE}
+            comparisonLabel="Algorithm's ideal"
+          />
+
+          <div className="flex w-full flex-1 flex-col gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-1">
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <p className="text-xs uppercase tracking-widest text-[var(--text-muted)]">Avg song</p>
+                <p className="mt-1.5 text-xl font-semibold tabular-nums text-[var(--text-strong)]">
+                  {formatDuration(listeningProfile.meanDurationMs)}
+                </p>
+                <p className="mt-0.5 text-xs text-[var(--text-muted)]">brevity signal</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <p className="text-xs uppercase tracking-widest text-[var(--text-muted)]">Recent releases</p>
+                <p className="mt-1.5 text-xl font-semibold tabular-nums text-[var(--text-strong)]">
+                  {formatPercent(listeningProfile.recentPercent)}
+                </p>
+                <p className="mt-0.5 text-xs text-[var(--text-muted)]">last 2 years</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <p className="text-xs uppercase tracking-widest text-[var(--text-muted)]">Genre HHI</p>
+                <p className="mt-1.5 text-xl font-semibold tabular-nums text-[var(--text-strong)]">
+                  {listeningProfile.genreHHI.toFixed(2)}
+                </p>
+                <p className="mt-0.5 text-xs text-[var(--text-muted)]">1.0 = one genre</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <p className="text-xs uppercase tracking-widest text-[var(--text-muted)]">Top 3 artists</p>
+                <p className="mt-1.5 text-xl font-semibold tabular-nums text-[var(--text-strong)]">
+                  {formatPercent(listeningProfile.topThreeArtistWeightPercent)}
+                </p>
+                <p className="mt-0.5 text-xs text-[var(--text-muted)]">of listening weight</p>
+              </div>
+            </div>
+            <p className="text-xs text-[var(--text-muted)]">
+              Based on your top {listeningProfile.trackCount} tracks.
+            </p>
+          </div>
         </div>
       </section>
 

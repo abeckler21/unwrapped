@@ -5,7 +5,9 @@ import { BreakdownBars } from "@/components/compare/breakdown-bars";
 import { OverlapSection } from "@/components/compare/overlap-section";
 import { ScoreDuel } from "@/components/compare/score-duel";
 import { ShareLink } from "@/components/compare/share-link";
+import { ListeningProfileChart } from "@/components/visualizations/listening-profile-chart";
 import { computeBubbleScore } from "@/lib/analysis/bubble-score";
+import { computeListeningProfile } from "@/lib/analysis/listening-profile";
 import { readCachedSpotifyProfile } from "@/lib/cache/spotify-profile-cache";
 import {
   buildVerdict,
@@ -150,6 +152,8 @@ export default async function CompareSessionPage({ params }: Props) {
   // ── Compute everything ───────────────────────────────────────────────────
   const scoreA = computeBubbleScore(initiatorProfile, "medium_term");
   const scoreB = computeBubbleScore(viewerProfile, "medium_term");
+  const profileA = computeListeningProfile(initiatorProfile, "medium_term");
+  const profileB = computeListeningProfile(viewerProfile, "medium_term");
 
   const artistOverlap = computeArtistOverlap(initiatorProfile, viewerProfile);
   const genreOverlap  = computeGenreOverlap(scoreA, scoreB);
@@ -190,6 +194,27 @@ export default async function CompareSessionPage({ params }: Props) {
         scoreA={scoreA}
         scoreB={scoreB}
       />
+
+      {/* Listening Profiles */}
+      <section className="panel p-6 sm:p-8">
+        <p className="eyebrow">Listening Profiles</p>
+        <h2 className="mt-1 text-lg font-semibold text-[var(--text-strong)]">
+          Profile shape — who listens more algorithmically?
+        </h2>
+        <p className="mt-1 mb-5 text-xs text-[var(--text-muted)]">
+          Based on song lengths, release dates, and genre breadth. Larger polygon = more algorithmic shape.
+        </p>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-sm font-medium text-[var(--text-soft)]">{nameA}</p>
+            <ListeningProfileChart profile={profileA} userLabel={nameA} size={220} />
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-sm font-medium text-[var(--text-soft)]">{nameB}</p>
+            <ListeningProfileChart profile={profileB} userLabel={nameB} size={220} />
+          </div>
+        </div>
+      </section>
 
       {/* Overlap */}
       <OverlapSection

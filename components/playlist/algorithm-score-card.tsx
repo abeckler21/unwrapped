@@ -15,13 +15,15 @@ const SCORE_LABELS: Record<keyof PlaylistAutopsy["scoreBreakdown"], string> = {
   ownerSignal: "Spotify-owned",
   recencySignal: "Recency bias",
   homogeneitySignal: "Genre homogeneity",
+  durationConsistency: "Duration consistency",
 }
 
 const SCORE_MAX: Record<keyof PlaylistAutopsy["scoreBreakdown"], number> = {
   nameSignal: 35,
   ownerSignal: 25,
   recencySignal: 25,
-  homogeneitySignal: 15,
+  homogeneitySignal: 5,
+  durationConsistency: 10,
 }
 
 function fmt(ms: number) {
