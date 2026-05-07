@@ -52,14 +52,6 @@ export default async function RootLayout({
                 </Link>
                 {hasActiveSession && (
                   <Link
-                    href="/compare"
-                    className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-strong)] transition-colors"
-                  >
-                    Compare
-                  </Link>
-                )}
-                {hasActiveSession && (
-                  <Link
                     href="/escape"
                     className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-strong)] transition-colors"
                   >
@@ -83,11 +75,19 @@ export default async function RootLayout({
                   </Link>
                 )}
                 {hasActiveSession ? (
-                  <form action="/api/auth/logout" method="post" className="ml-2">
-                    <button type="submit" className="button-secondary text-sm">
-                      Log out
-                    </button>
-                  </form>
+                  <div className="ml-2 flex items-center gap-2">
+                    <Link
+                      href="/compare"
+                      className="button-secondary text-sm"
+                    >
+                      Compare
+                    </Link>
+                    <form action="/api/auth/logout" method="post">
+                      <button type="submit" className="button-secondary text-sm">
+                        Log out
+                      </button>
+                    </form>
+                  </div>
                 ) : (
                   <Link href="/api/auth/login" className="button-primary ml-2">
                     Log in with Spotify
