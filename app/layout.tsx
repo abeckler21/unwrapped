@@ -78,7 +78,7 @@ export default async function RootLayout({
                   <div className="ml-2 flex items-center gap-2">
                     <Link
                       href="/compare"
-                      className="button-secondary text-sm"
+                      className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-strong)] transition-colors"
                     >
                       Compare
                     </Link>
