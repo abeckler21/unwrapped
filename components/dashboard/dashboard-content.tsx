@@ -18,6 +18,7 @@ import {
 import { formatDuration, formatPercent } from "@/lib/format";
 import { BubbleScoreTrendChart } from "@/components/visualizations/bubble-score-trend-chart";
 import { computeListeningProfile, ALGORITHMIC_ARCHETYPE } from "@/lib/analysis/listening-profile";
+import { computeTrackIMI, computeIMIAggregate, imiTierBg, IMI_ENGINEERED_THRESHOLD } from "@/lib/analysis/imi";
 import type { Archetype } from "@/lib/ai/archetype";
 import type { BubbleScoreResult, ScoreBreakdownItem } from "@/lib/analysis/bubble-score";
 import type { VisitRecord } from "@/lib/analysis/visit-tracking";
@@ -323,61 +324,103 @@ export function DashboardContent({
         </article>
       </section>
 
-      {/* ── Top tracks ──────────────────────────────────────────── */}
+      {/* ── Top tracks + IMI ────────────────────────────────────── */}
       <section className="panel flex flex-col gap-5">
-        <div>
-          <p className="eyebrow">Top tracks &middot; {TIME_RANGE_LABELS[range]}</p>
-          <h2 className="mt-1 text-lg font-semibold text-[var(--text-strong)]">
-            The songs carrying your profile
-          </h2>
+        {/* Section header + IMI aggregate */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="eyebrow">Top tracks &middot; {TIME_RANGE_LABELS[range]}</p>
+            <h2 className="mt-1 text-lg font-semibold text-[var(--text-strong)]">
+              The songs carrying your profile
+            </h2>
+          </div>
+
+          {/* IMI aggregate callout */}
+          {(() => {
+            const agg = computeIMIAggregate(currentData.topTracks)
+            const engineeredLabel = agg.engineeredCount === 0
+              ? "None of your top tracks score above the engineered threshold."
+              : `${agg.engineeredCount} of your top ${agg.totalTracks} tracks score ${IMI_ENGINEERED_THRESHOLD}+ on the IMI.`
+            return (
+              <div className="shrink-0 rounded-2xl border border-white/10 bg-black/20 px-5 py-4 sm:text-right">
+                <p className="eyebrow">Industry Manipulation Index</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-[var(--accent)]">
+                  {agg.mean}
+                  <span className="ml-1 text-sm font-normal text-[var(--text-muted)]">avg</span>
+                </p>
+                <p className="mt-1 text-xs text-[var(--text-muted)]">{engineeredLabel}</p>
+              </div>
+            )
+          })()}
+        </div>
+
+        {/* Column labels */}
+        <div className="flex items-center gap-3 border-b border-white/6 pb-2 px-2">
+          <span className="w-5 shrink-0" />
+          <span className="w-9 shrink-0" />
+          <span className="flex-1 text-xs text-[var(--text-muted)]">Track</span>
+          <span className="shrink-0 text-xs text-[var(--text-muted)]">Length</span>
+          <span className="hidden w-24 shrink-0 text-right text-xs text-[var(--text-muted)] sm:block">IMI</span>
         </div>
 
         <div className="flex flex-col gap-0.5">
-          {currentData.topTracks.map((track, index) => (
-            <div
-              key={track.id}
-              className="flex items-center gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-white/[0.04]"
-            >
-              <span className="w-5 shrink-0 text-right text-xs tabular-nums text-[var(--text-muted)]">
-                {index + 1}
-              </span>
-              <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-md border border-white/10 bg-white/[0.06]">
-                {track.album.images[0]?.url && (
-                  <Image
-                    src={track.album.images[0].url}
-                    alt={track.album.name}
-                    fill
-                    sizes="36px"
-                    className="object-cover"
-                    unoptimized
-                  />
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-[var(--text-strong)]">{track.name}</p>
-                <p className="truncate text-xs text-[var(--text-muted)]">{track.artists.join(", ")}</p>
-              </div>
-              <span className="shrink-0 text-xs tabular-nums text-[var(--text-muted)]">
-                {formatDuration(track.durationMs)}
-              </span>
-              {track.popularity > 0 ? (
-                <div className="hidden w-20 shrink-0 items-center gap-2 sm:flex">
-                  <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full bg-[var(--accent)] opacity-60"
-                      style={{ width: `${track.popularity}%` }}
+          {currentData.topTracks.map((track, index) => {
+            const imi = computeTrackIMI(track)
+            return (
+              <div
+                key={track.id}
+                className="flex items-center gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-white/[0.04]"
+              >
+                <span className="w-5 shrink-0 text-right text-xs tabular-nums text-[var(--text-muted)]">
+                  {index + 1}
+                </span>
+                <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-md border border-white/10 bg-white/[0.06]">
+                  {track.album.images[0]?.url && (
+                    <Image
+                      src={track.album.images[0].url}
+                      alt={track.album.name}
+                      fill
+                      sizes="36px"
+                      className="object-cover"
+                      unoptimized
                     />
-                  </div>
-                  <span className="w-6 text-right text-xs tabular-nums text-[var(--text-muted)]">
-                    {track.popularity}
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-[var(--text-strong)]">{track.name}</p>
+                  <p className="truncate text-xs text-[var(--text-muted)]">{track.artists.join(", ")}</p>
+                </div>
+                <span className="shrink-0 text-xs tabular-nums text-[var(--text-muted)]">
+                  {formatDuration(track.durationMs)}
+                </span>
+                {/* IMI badge — visible on sm+ */}
+                <div className="hidden w-24 shrink-0 items-center justify-end gap-2 sm:flex">
+                  <span
+                    className={`rounded-full border px-2 py-0.5 text-xs font-medium tabular-nums ${imiTierBg(imi.tier)}`}
+                  >
+                    {imi.score} · {imi.tier}
                   </span>
                 </div>
-              ) : (
-                <div className="hidden w-20 sm:block" />
-              )}
-            </div>
-          ))}
+                {/* IMI score only — mobile */}
+                <div className="flex w-8 shrink-0 items-center justify-end sm:hidden">
+                  <span
+                    className={`rounded-full border px-1.5 py-0.5 text-xs font-medium tabular-nums ${imiTierBg(imi.tier)}`}
+                  >
+                    {imi.score}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
         </div>
+
+        {/* IMI methodology note */}
+        <p className="border-t border-white/6 pt-3 text-xs text-[var(--text-muted)]">
+          IMI = Industry Manipulation Index. Scores how algorithmically optimized each track is
+          for the streaming era, based on song length, popularity, features, recency, and how short
+          the track is relative to its era&apos;s average hit. Higher = more engineered for the platform.
+          Engineered threshold: {IMI_ENGINEERED_THRESHOLD}+.
+        </p>
       </section>
 
       {/* ── Listening Profile ───────────────────────────────────── */}

@@ -6,6 +6,7 @@ import { CountUp } from "./count-up"
 import { ChapterProgress } from "./chapter-progress"
 import { formatDuration } from "@/lib/format"
 import { detectGapGenres } from "@/lib/escape/genres"
+import { computeIMIAggregate, IMI_ENGINEERED_THRESHOLD } from "@/lib/analysis/imi"
 import {
   songLengthTrend,
   genreShareTrend,
@@ -140,6 +141,9 @@ export function NarrativeContent({
   // Genre gaps for chapter 4
   const userGenreNames = score.genreDistribution.map((g) => g.genre)
   const gapGenres = detectGapGenres(userGenreNames, 8)
+
+  // IMI aggregate for Chapter III
+  const imiAgg = computeIMIAggregate(profile.timeRanges.medium_term.topTracks)
 
   // Split escape recs across chapters 4 and 5
   const recs4 = escapeRecs?.slice(0, 3) ?? []
@@ -444,7 +448,36 @@ export function NarrativeContent({
             </ScrollReveal>
           </div>
 
-          <ScrollReveal delay={500}>
+          {/* IMI personal bridge */}
+          {imiAgg.totalTracks > 0 && (
+            <ScrollReveal delay={480}>
+              <div className="rounded-2xl border border-white/8 bg-white/[0.025] p-6">
+                <p className="eyebrow text-[var(--accent)]">Your listening</p>
+                <p className="mt-3 text-5xl font-bold tabular-nums text-[var(--accent)]">
+                  {imiAgg.engineeredCount}
+                  <span className="ml-2 text-2xl font-normal text-[var(--text-muted)]">
+                    of {imiAgg.totalTracks}
+                  </span>
+                </p>
+                <p className="mt-3 text-[var(--text-soft)]">
+                  of your top tracks score {IMI_ENGINEERED_THRESHOLD}+ on the
+                  Industry Manipulation Index — algorithmically engineered for the
+                  streaming era.{" "}
+                  {imiAgg.engineeredPercent >= 50
+                    ? "More than half your listening is optimized music."
+                    : imiAgg.engineeredCount === 0
+                      ? "Your taste skews toward less-optimized music."
+                      : "A significant slice of your listening is platform-optimized."}
+                </p>
+                <p className="mt-3 text-sm text-[var(--text-muted)]">
+                  IMI measures song length vs. era average, popularity, collaborations,
+                  and release recency. See the full breakdown on the Dashboard.
+                </p>
+              </div>
+            </ScrollReveal>
+          )}
+
+          <ScrollReveal delay={580}>
             <p className="text-xl leading-relaxed text-[var(--text-soft)]">
               These aren&apos;t accidents. Songs are shorter because short songs perform
               better. Genres are concentrating because the algorithm amplifies
