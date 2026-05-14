@@ -142,3 +142,41 @@ a {
     transform: translateY(0);
   }
 }
+
+/* ── Year scrubber (world genre map) ─────────────────────────────────────── */
+.year-scrubber {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+  cursor: pointer;
+}
+
+.year-scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.5);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.year-scrubber::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 14px rgba(249, 115, 22, 0.7);
+}
+
+.year-scrubber::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.5);
+}

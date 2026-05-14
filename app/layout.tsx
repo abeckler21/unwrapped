@@ -56,6 +56,12 @@ export default async function RootLayout({
                 >
                   History
                 </Link>
+                <Link
+                  href="/explore"
+                  className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-strong)] transition-colors"
+                >
+                  Explore
+                </Link>
                 {hasActiveSession && (
                   <Link
                     href="/escape"

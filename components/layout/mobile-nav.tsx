@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { href: "/dashboard", label: "Dashboard", authRequired: false },
   { href: "/story", label: "Story", authRequired: false },
   { href: "/history", label: "History", authRequired: false },
+  { href: "/explore", label: "Explore", authRequired: false },
   { href: "/compare", label: "Compare", authRequired: true },
   { href: "/widgets", label: "Widgets", authRequired: true },
   { href: "/escape", label: "Escape", authRequired: true },
