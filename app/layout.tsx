@@ -45,6 +45,12 @@ export default async function RootLayout({
                   Dashboard
                 </Link>
                 <Link
+                  href="/story"
+                  className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-strong)] transition-colors"
+                >
+                  Story
+                </Link>
+                <Link
                   href="/history"
                   className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-strong)] transition-colors"
                 >

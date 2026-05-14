@@ -1,0 +1,71 @@
+"use client"
+
+import { useEffect, useState } from "react"
+
+const CHAPTERS = [
+  { id: "ch-1", label: "Where You Are" },
+  { id: "ch-2", label: "How You Got Here" },
+  { id: "ch-3", label: "What the Industry Did" },
+  { id: "ch-4", label: "What You're Missing" },
+  { id: "ch-5", label: "What to Do About It" },
+]
+
+export function ChapterProgress() {
+  const [activeId, setActiveId] = useState("ch-1")
+
+  useEffect(() => {
+    const observers: IntersectionObserver[] = []
+
+    CHAPTERS.forEach(({ id }) => {
+      const el = document.getElementById(id)
+      if (!el) return
+      const obs = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) setActiveId(id)
+        },
+        { threshold: 0.35 },
+      )
+      obs.observe(el)
+      observers.push(obs)
+    })
+
+    return () => observers.forEach((obs) => obs.disconnect())
+  }, [])
+
+  return (
+    <nav
+      aria-label="Chapter navigation"
+      className="fixed right-5 top-1/2 z-20 hidden -translate-y-1/2 flex-col gap-4 lg:flex"
+    >
+      {CHAPTERS.map(({ id, label }) => (
+        <button
+          key={id}
+          type="button"
+          title={label}
+          aria-label={`Jump to: ${label}`}
+          onClick={() =>
+            document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
+          }
+          className="group flex items-center justify-end gap-2"
+        >
+          <span
+            className={`text-[10px] tracking-wide transition-all duration-200 ${
+              activeId === id
+                ? "opacity-70 text-[var(--accent)]"
+                : "opacity-0 group-hover:opacity-40 text-[var(--text-muted)]"
+            }`}
+          >
+            {label}
+          </span>
+          <span
+            className={`block rounded-full transition-all duration-300 ${
+              activeId === id
+                ? "h-2 w-2 bg-[var(--accent)]"
+                : "h-1.5 w-1.5 bg-white/25 group-hover:bg-white/50"
+            }`}
+          />
+        </button>
+      ))}
+    </nav>
+  )
+}
