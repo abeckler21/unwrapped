@@ -50,27 +50,81 @@ export default async function CompareSessionPage({ params }: Props) {
     );
   }
 
+  // ── Load initiator profile early (needed for both auth states) ─────────
+  const initiatorProfile = await readCachedSpotifyProfile(
+    compareSession.initiatorUserId,
+    { ignoreTtl: true },
+  );
+
   // ── Check who the current visitor is ────────────────────────────────────
   const session = await getSpotifySession();
   const viewerUserId = session.spotifyUserId;
 
-  // Not logged in → prompt to log in, preserving the compare URL as a hint
+  // Not logged in → show the initiator's data with a login CTA
   if (!viewerUserId) {
+    if (!initiatorProfile) {
+      return (
+        <main className="mx-auto flex min-h-[calc(100vh-84px)] w-full max-w-2xl flex-col justify-center px-5 py-12 sm:px-8">
+          <div className="panel p-8 text-center">
+            <p className="text-2xl font-semibold text-[var(--text-strong)]">Waiting for your friend</p>
+            <p className="mt-3 text-sm text-[var(--text-muted)]">
+              The person who shared this link hasn&apos;t loaded their dashboard yet.
+              Ask them to visit their dashboard first, then try again.
+            </p>
+          </div>
+        </main>
+      );
+    }
+
+    const scoreA = computeBubbleScore(initiatorProfile, "medium_term");
+    const nameA = initiatorProfile.displayName || "Them";
+    const topGenres = scoreA.genreDistribution.slice(0, 3).map((g) => g.genre);
+
     return (
       <main className="mx-auto flex min-h-[calc(100vh-84px)] w-full max-w-2xl flex-col justify-center px-5 py-12 sm:px-8">
-        <div className="panel panel-glow p-8 sm:p-10">
-          <p className="eyebrow">Comparative Mode</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--text-strong)]">
-            Someone wants to compare with you
-          </h1>
-          <p className="mt-4 text-sm leading-7 text-[var(--text-muted)]">
-            Log in with your Spotify account to see a side-by-side comparison —
-            bubble scores, shared artists, genre overlap, and who is more
-            algorithmically captured.
-          </p>
-          <Link href="/api/auth/login" className="button-primary mt-8 inline-flex">
-            Log in with Spotify
-          </Link>
+        <div className="panel panel-glow flex flex-col gap-8 p-8 sm:p-10">
+          <div>
+            <p className="eyebrow">Comparative Mode</p>
+            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-[var(--text-strong)]">
+              {nameA} wants to compare with you
+            </h1>
+          </div>
+
+          {/* Side-by-side preview: one real score, one placeholder */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-center">
+              <p className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)]">{nameA}</p>
+              <p
+                className="font-semibold leading-none tabular-nums text-[var(--text-strong)]"
+                style={{ fontSize: "clamp(3rem,12vw,5rem)" }}
+              >
+                {Math.round(scoreA.score)}
+              </p>
+              <p className="text-sm font-medium text-[var(--accent)]">{scoreA.tier}</p>
+              {topGenres.length > 0 && (
+                <p className="mt-1 text-xs text-[var(--text-muted)]">{topGenres.join(" · ")}</p>
+              )}
+            </div>
+            <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-center opacity-50">
+              <p className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)]">You</p>
+              <p
+                className="font-semibold leading-none tabular-nums text-[var(--text-muted)]"
+                style={{ fontSize: "clamp(3rem,12vw,5rem)" }}
+              >
+                ?
+              </p>
+              <p className="text-sm text-[var(--text-muted)]">Log in to reveal</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <Link href="/api/auth/login" className="button-primary text-center">
+              Log in with Spotify to compare
+            </Link>
+            <p className="text-center text-xs text-[var(--text-muted)]">
+              You&apos;ll see shared artists, genre overlap, and who is more algorithmically captured.
+            </p>
+          </div>
         </div>
       </main>
     );
@@ -101,14 +155,7 @@ export default async function CompareSessionPage({ params }: Props) {
   }
 
   // ── Load both profiles ───────────────────────────────────────────────────
-
-  // Initiator profile: load from cache (ignoreTtl so older snapshots still work)
-  const initiatorProfile = await readCachedSpotifyProfile(
-    compareSession.initiatorUserId,
-    { ignoreTtl: true },
-  );
-
-  // Viewer profile: use getCurrentSpotifyProfile so token refresh is handled
+  // initiatorProfile already loaded above; just need the viewer's profile.
   const { profile: viewerProfile, usingDemoData } = await getCurrentSpotifyProfile();
 
   if (!initiatorProfile) {

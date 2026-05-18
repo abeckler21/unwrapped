@@ -18,12 +18,18 @@ type CachedProfileRow = {
   fetched_at: string;
 };
 
+export type CachedProfile = SpotifyProfile & {
+  fetchedFromCache: true;
+  /** True when the cache entry is older than 24 h. Caller should revalidate in the background. */
+  isStale: boolean;
+};
+
 export async function readCachedSpotifyProfile(
   spotifyUserId: string,
   options?: {
     ignoreTtl?: boolean;
   },
-) {
+): Promise<CachedProfile | null> {
   const supabase = getSupabaseAdminClient();
 
   if (!supabase) {
@@ -40,20 +46,21 @@ export async function readCachedSpotifyProfile(
     return null;
   }
 
-  const ageMs = Date.now() - new Date(data.fetched_at).getTime();
-
-  if (!options?.ignoreTtl && ageMs > TWENTY_FOUR_HOURS_MS) {
-    return null;
-  }
-
   if (!isProfileComplete(data.profile)) {
     return null;
   }
 
-  return {
-    ...data.profile,
-    fetchedFromCache: true,
-  };
+  const ageMs = Date.now() - new Date(data.fetched_at).getTime();
+  const isStale = ageMs > TWENTY_FOUR_HOURS_MS;
+
+  // Hard-expire only when the caller explicitly respects the TTL
+  if (!options?.ignoreTtl && isStale) {
+    // Return the stale record so callers can serve it immediately and
+    // revalidate in the background, rather than blocking on a fresh fetch.
+    return { ...data.profile, fetchedFromCache: true, isStale: true };
+  }
+
+  return { ...data.profile, fetchedFromCache: true, isStale: false };
 }
 
 export async function writeCachedSpotifyProfile(spotifyUserId: string, profile: SpotifyProfile) {

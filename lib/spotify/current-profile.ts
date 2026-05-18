@@ -1,3 +1,5 @@
+import { after } from "next/server";
+
 import { readCachedSpotifyProfile, writeCachedSpotifyProfile } from "@/lib/cache/spotify-profile-cache";
 import { mockProfile } from "@/lib/data/mock-profile";
 import { enrichProfileWithLastFmGenres } from "@/lib/lastfm/enrich-profile";
@@ -52,6 +54,20 @@ export async function getCurrentSpotifyProfile(): Promise<{
 
     if (cachedProfile) {
       const enrichedCachedProfile = await enrichProfileWithLastFmGenres(cachedProfile);
+
+      if (cachedProfile.isStale) {
+        // Serve the stale profile immediately; refresh the cache after the
+        // response is sent so the next visit gets fresh data.
+        const userId = session.spotifyUserId;
+        after(async () => {
+          try {
+            const fresh = await fetchSpotifyProfile(accessToken);
+            await writeCachedSpotifyProfile(userId, fresh);
+          } catch {
+            // Background refresh failed — stale data remains; retried next visit.
+          }
+        });
+      }
 
       return {
         profile: enrichedCachedProfile,
