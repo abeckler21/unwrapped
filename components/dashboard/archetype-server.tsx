@@ -33,7 +33,19 @@ interface Props {
 }
 
 export async function ArchetypeServer({ profile, usingDemoData, score, shareHref }: Props) {
-  const archetype = await getOrGenerateArchetype(profile, usingDemoData, score);
+  let archetype;
+  try {
+    archetype = await getOrGenerateArchetype(profile, usingDemoData, score);
+  } catch {
+    return (
+      <section className="panel panel-glow flex flex-col gap-3 p-6 sm:p-8">
+        <p className="text-sm text-[var(--text-muted)]">
+          Listener archetype unavailable — the analysis service is temporarily down. Your score
+          and other data below are unaffected.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="panel panel-glow flex flex-col gap-3 p-6 sm:flex-row sm:items-start sm:gap-8 sm:p-8">

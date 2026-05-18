@@ -5,9 +5,26 @@ import { CareerChart } from "@/components/artist/career-chart"
 import { readCachedArtistAnalysis, writeCachedArtistAnalysis } from "@/lib/artist/cache"
 import { analyzeArtist } from "@/lib/artist/analysis"
 import { getValidAccessToken } from "@/lib/spotify/session"
+import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 
 type Props = {
   params: Promise<{ id: string }>
+}
+
+// Allow IDs not in generateStaticParams to be rendered on-demand
+export const dynamicParams = true
+
+// Pre-render every artist already in the Supabase cache at build time
+export async function generateStaticParams() {
+  const supabase = getSupabaseAdminClient()
+  if (!supabase) return []
+
+  const { data } = await supabase
+    .from("artist_cache")
+    .select("artist_id")
+    .limit(200)
+
+  return (data ?? []).map((row) => ({ id: row.artist_id }))
 }
 
 function msToMin(ms: number) {
@@ -17,26 +34,28 @@ function msToMin(ms: number) {
 
 export default async function ArtistPage({ params }: Props) {
   const { id } = await params
-  const accessToken = await getValidAccessToken()
 
-  if (!accessToken) {
-    return (
-      <main className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-5 py-8 sm:px-8">
-        <p className="text-sm text-[var(--text-muted)]">
-          You need to be logged in to view artist dashboards.{" "}
-          <Link href="/api/auth/login" className="text-[var(--accent)]">
-            Log in with Spotify →
-          </Link>
-        </p>
-      </main>
-    )
-  }
-
-  // Try cache
+  // Serve from Supabase cache without requiring a Spotify token.
+  // The token is only needed when the analysis hasn't been run yet.
   let analysis = await readCachedArtistAnalysis(id)
   let fetchError: string | null = null
 
   if (!analysis) {
+    const accessToken = await getValidAccessToken()
+
+    if (!accessToken) {
+      return (
+        <main className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-5 py-8 sm:px-8">
+          <p className="text-sm text-[var(--text-muted)]">
+            You need to be logged in to view artist dashboards.{" "}
+            <Link href="/api/auth/login" className="text-[var(--accent)]">
+              Log in with Spotify →
+            </Link>
+          </p>
+        </main>
+      )
+    }
+
     try {
       analysis = await analyzeArtist(id, accessToken)
       await writeCachedArtistAnalysis(id, analysis)
