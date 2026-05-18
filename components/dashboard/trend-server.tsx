@@ -3,6 +3,7 @@ import {
   generateTrendNarrative,
   getVisitHistory,
   recordVisit,
+  type VisitRecord,
 } from "@/lib/analysis/visit-tracking";
 
 function SkeletonBlock({ className = "" }: { className?: string }) {
@@ -31,52 +32,61 @@ interface Props {
 export async function TrendServer({ userId, bubbleScore, usingDemoData }: Props) {
   if (usingDemoData) return null;
 
+  // Fetch all data first; render JSX outside the try/catch to satisfy the
+  // react-hooks/error-boundaries lint rule (no JSX inside try/catch).
+  let visitHistory: VisitRecord[] = [];
+  let trendNarrative: string | null = null;
+  let failed = false;
+
   try {
     await recordVisit(userId, bubbleScore);
-    const visitHistory = await getVisitHistory(userId);
-
-    if (visitHistory.length < 2) {
-      return (
-        <section className="panel flex flex-col gap-2 p-6">
-          <p className="text-sm font-medium text-[var(--text-strong)]">Your trend starts here</p>
-          <p className="text-sm text-[var(--text-muted)]">
-            Come back in a few days and this section will show whether your filter bubble is
-            widening or narrowing over time.
-          </p>
-        </section>
-      );
+    visitHistory = await getVisitHistory(userId);
+    if (visitHistory.length >= 2) {
+      trendNarrative = await generateTrendNarrative(visitHistory);
     }
+  } catch {
+    // Supabase or LLM error — section disappears silently rather than crashing the page
+    failed = true;
+  }
 
-    const trendNarrative = await generateTrendNarrative(visitHistory);
+  if (failed) return null;
 
+  if (visitHistory.length < 2) {
     return (
-      <section className="panel flex flex-col gap-4 p-6 sm:p-8">
-        <div className="flex flex-col gap-1">
-          <p className="eyebrow">Filter bubble over time</p>
-          <h2 className="text-lg font-semibold text-[var(--text-strong)]">
-            Your score across visits
-          </h2>
-          {trendNarrative && (
-            <p className="text-sm leading-7 text-[var(--text-muted)]">{trendNarrative}</p>
-          )}
-        </div>
-        <BubbleScoreTrendChart
-          data={visitHistory.map((v) => ({
-            label: new Date(v.visitedAt).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            }),
-            score: v.bubbleScore,
-          }))}
-        />
-        <p className="text-xs text-[var(--text-muted)]">
-          Dashed lines mark tier boundaries: Wide Open / Narrowing / In the Loop / Deep in the
-          Algorithm
+      <section className="panel flex flex-col gap-2 p-6">
+        <p className="text-sm font-medium text-[var(--text-strong)]">Your trend starts here</p>
+        <p className="text-sm text-[var(--text-muted)]">
+          Come back in a few days and this section will show whether your filter bubble is widening
+          or narrowing over time.
         </p>
       </section>
     );
-  } catch {
-    // Supabase or LLM error — trend section disappears silently rather than crashing the page
-    return null;
   }
+
+  return (
+    <section className="panel flex flex-col gap-4 p-6 sm:p-8">
+      <div className="flex flex-col gap-1">
+        <p className="eyebrow">Filter bubble over time</p>
+        <h2 className="text-lg font-semibold text-[var(--text-strong)]">
+          Your score across visits
+        </h2>
+        {trendNarrative && (
+          <p className="text-sm leading-7 text-[var(--text-muted)]">{trendNarrative}</p>
+        )}
+      </div>
+      <BubbleScoreTrendChart
+        data={visitHistory.map((v) => ({
+          label: new Date(v.visitedAt).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          }),
+          score: v.bubbleScore,
+        }))}
+      />
+      <p className="text-xs text-[var(--text-muted)]">
+        Dashed lines mark tier boundaries: Wide Open / Narrowing / In the Loop / Deep in the
+        Algorithm
+      </p>
+    </section>
+  );
 }

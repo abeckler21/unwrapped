@@ -33,10 +33,16 @@ interface Props {
 }
 
 export async function ArchetypeServer({ profile, usingDemoData, score, shareHref }: Props) {
-  let archetype;
+  // Fetch data first; render JSX outside the try/catch to satisfy the
+  // react-hooks/error-boundaries lint rule (no JSX inside try/catch).
+  let archetype: Awaited<ReturnType<typeof getOrGenerateArchetype>> | null = null;
   try {
     archetype = await getOrGenerateArchetype(profile, usingDemoData, score);
   } catch {
+    // Fallback rendered below
+  }
+
+  if (!archetype) {
     return (
       <section className="panel panel-glow flex flex-col gap-3 p-6 sm:p-8">
         <p className="text-sm text-[var(--text-muted)]">
