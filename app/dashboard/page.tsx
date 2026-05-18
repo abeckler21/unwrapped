@@ -63,19 +63,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {isAuthenticated ? (
-            <form action="/api/auth/logout" method="post">
-              <button type="submit" className="button-secondary text-sm px-4 py-2">
-                Log out
-              </button>
-            </form>
-          ) : (
-            <Link href="/api/auth/login" className="button-primary text-sm px-4 py-2">
-              Log in with Spotify
-            </Link>
-          )}
-        </div>
+        {!isAuthenticated && (
+          <Link href="/api/auth/login" className="button-primary text-sm px-4 py-2">
+            Log in with Spotify
+          </Link>
+        )}
       </div>
 
       <div className="flex flex-col gap-10">
