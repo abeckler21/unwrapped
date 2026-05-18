@@ -114,7 +114,7 @@ export default async function HistoryPage() {
                         fill
                         className="object-cover"
                         sizes="64px"
-                        unoptimized
+
                       />
                     </div>
                   ) : (

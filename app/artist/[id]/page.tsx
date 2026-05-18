@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 
 import { AoiChart } from "@/components/artist/aoi-chart"
@@ -115,12 +116,15 @@ export default async function ArtistPage({ params }: Props) {
 
         <div className="mt-6 flex items-center gap-5">
           {analysis.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={analysis.imageUrl}
-              alt={analysis.name}
-              className="h-20 w-20 rounded-full object-cover"
-            />
+            <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full">
+              <Image
+                src={analysis.imageUrl}
+                alt={analysis.name}
+                fill
+                sizes="80px"
+                className="object-cover"
+              />
+            </div>
           ) : (
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/10 text-3xl font-bold text-[var(--text-muted)]">
               {analysis.name[0]}
@@ -266,12 +270,15 @@ export default async function ArtistPage({ params }: Props) {
               className="flex items-center gap-4 py-3 first:pt-0 last:pb-0"
             >
               {album.coverImageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={album.coverImageUrl}
-                  alt={album.name}
-                  className="h-10 w-10 shrink-0 rounded-md object-cover"
-                />
+                <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md">
+                  <Image
+                    src={album.coverImageUrl}
+                    alt={album.name}
+                    fill
+                    sizes="40px"
+                    className="object-cover"
+                  />
+                </div>
               ) : (
                 <div className="h-10 w-10 shrink-0 rounded-md bg-white/10" />
               )}
