@@ -150,7 +150,7 @@ export function NarrativeContent({
   const recs5 = escapeRecs?.slice(3) ?? []
 
   return (
-    <div className="relative">
+    <div className="relative pb-16 lg:pb-0">
       <ChapterProgress />
 
       {/* ── Chapter 1: Where You Are ──────────────────────────────── */}

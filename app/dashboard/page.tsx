@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 
@@ -8,6 +9,11 @@ import { computeBubbleScore } from "@/lib/analysis/bubble-score";
 import type { BubbleScoreResult } from "@/lib/analysis/bubble-score";
 import { getCurrentSpotifyProfile } from "@/lib/spotify/current-profile";
 import type { TimeRange } from "@/lib/types/spotify";
+
+export const metadata: Metadata = {
+  title: "Dashboard — Unwrapped",
+  description: "Your personal Filter Bubble Score, genre footprint, top tracks, and Industry Manipulation Index.",
+}
 
 type DashboardPageProps = {
   searchParams?: Promise<{

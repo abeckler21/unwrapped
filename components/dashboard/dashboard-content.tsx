@@ -534,7 +534,7 @@ function IMITrackRow({
   }, [showTooltip])
 
   const breakdown = (
-    <div className="absolute bottom-full right-0 z-50 mb-2 w-52 rounded-xl border border-white/10 bg-[#111] p-3 shadow-xl">
+    <div className="absolute bottom-full right-0 z-50 mb-2 w-52 max-w-[calc(100vw-1rem)] rounded-xl border border-white/10 bg-[#111] p-3 shadow-xl">
       <p className="mb-2 text-xs font-semibold text-[var(--text-soft)]">IMI Breakdown</p>
       <div className="flex flex-col gap-1.5">
         {(Object.keys(imi.breakdown) as (keyof IMIResult["breakdown"])[]).map((key) => {
