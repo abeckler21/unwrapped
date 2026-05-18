@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { GenreDistributionChart } from "@/components/visualizations/genre-distribution-chart";
 import { ListeningProfileChart } from "@/components/visualizations/listening-profile-chart";
@@ -513,11 +513,55 @@ function IMITrackRow({
   imi: IMIResult
 }) {
   const [showTooltip, setShowTooltip] = useState(false)
+  const desktopRef = useRef<HTMLDivElement>(null)
+  const mobileRef = useRef<HTMLDivElement>(null)
+
+  // Close tooltip when clicking/tapping outside both badge containers
+  useEffect(() => {
+    if (!showTooltip) return
+    function handleOutsideClick(e: MouseEvent | TouchEvent) {
+      const target = e.target as Node
+      const insideDesktop = desktopRef.current?.contains(target)
+      const insideMobile = mobileRef.current?.contains(target)
+      if (!insideDesktop && !insideMobile) setShowTooltip(false)
+    }
+    document.addEventListener("mousedown", handleOutsideClick)
+    document.addEventListener("touchstart", handleOutsideClick)
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick)
+      document.removeEventListener("touchstart", handleOutsideClick)
+    }
+  }, [showTooltip])
+
+  const breakdown = (
+    <div className="absolute bottom-full right-0 z-50 mb-2 w-52 rounded-xl border border-white/10 bg-[#111] p-3 shadow-xl">
+      <p className="mb-2 text-xs font-semibold text-[var(--text-soft)]">IMI Breakdown</p>
+      <div className="flex flex-col gap-1.5">
+        {(Object.keys(imi.breakdown) as (keyof IMIResult["breakdown"])[]).map((key) => {
+          const val = imi.breakdown[key]
+          const max = IMI_MAX[key]
+          return (
+            <div key={key}>
+              <div className="flex justify-between text-xs">
+                <span className="text-[var(--text-muted)]">{IMI_LABELS[key]}</span>
+                <span className="tabular-nums text-[var(--text-soft)]">{val}/{max}</span>
+              </div>
+              <div className="mt-0.5 h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
+                <div
+                  className="h-full rounded-full bg-[var(--accent)]/60"
+                  style={{ width: `${(val / max) * 100}%` }}
+                />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      <p className="mt-2 text-[10px] text-[var(--text-muted)]">Total: {imi.score}/100</p>
+    </div>
+  )
 
   return (
-    <div
-      className="flex items-center gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-white/[0.04]"
-    >
+    <div className="flex items-center gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-white/[0.04]">
       <span className="w-5 shrink-0 text-right text-xs tabular-nums text-[var(--text-muted)]">
         {index + 1}
       </span>
@@ -539,53 +583,35 @@ function IMITrackRow({
       <span className="shrink-0 text-xs tabular-nums text-[var(--text-muted)]">
         {formatDuration(track.durationMs)}
       </span>
-      {/* IMI badge — visible on sm+ */}
-      <div className="relative hidden w-24 shrink-0 items-center justify-end gap-2 sm:flex">
+      {/* IMI badge — sm+ (hover + tap to toggle) */}
+      <div ref={desktopRef} className="relative hidden w-24 shrink-0 items-center justify-end sm:flex">
         <button
           type="button"
           onMouseEnter={() => setShowTooltip(true)}
           onMouseLeave={() => setShowTooltip(false)}
           onFocus={() => setShowTooltip(true)}
           onBlur={() => setShowTooltip(false)}
+          onClick={() => setShowTooltip((v) => !v)}
+          aria-expanded={showTooltip}
           aria-label={`IMI breakdown for ${track.name}`}
-          className={`rounded-full border px-2 py-0.5 text-xs font-medium tabular-nums cursor-default ${imiTierBg(imi.tier)}`}
+          className={`rounded-full border px-2 py-0.5 text-xs font-medium tabular-nums ${imiTierBg(imi.tier)}`}
         >
           {imi.score} · {imi.tier}
         </button>
-        {showTooltip && (
-          <div className="absolute bottom-full right-0 z-50 mb-2 w-52 rounded-xl border border-white/10 bg-[#111] p-3 shadow-xl">
-            <p className="mb-2 text-xs font-semibold text-[var(--text-soft)]">IMI Breakdown</p>
-            <div className="flex flex-col gap-1.5">
-              {(Object.keys(imi.breakdown) as (keyof IMIResult["breakdown"])[]).map((key) => {
-                const val = imi.breakdown[key]
-                const max = IMI_MAX[key]
-                return (
-                  <div key={key}>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-[var(--text-muted)]">{IMI_LABELS[key]}</span>
-                      <span className="tabular-nums text-[var(--text-soft)]">{val}/{max}</span>
-                    </div>
-                    <div className="mt-0.5 h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
-                      <div
-                        className="h-full rounded-full bg-[var(--accent)]/60"
-                        style={{ width: `${(val / max) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-            <p className="mt-2 text-[10px] text-[var(--text-muted)]">Total: {imi.score}/100</p>
-          </div>
-        )}
+        {showTooltip && breakdown}
       </div>
-      {/* IMI score only — mobile */}
-      <div className="flex w-8 shrink-0 items-center justify-end sm:hidden">
-        <span
+      {/* IMI badge — mobile (tap to toggle) */}
+      <div ref={mobileRef} className="relative flex w-8 shrink-0 items-center justify-end sm:hidden">
+        <button
+          type="button"
+          onClick={() => setShowTooltip((v) => !v)}
+          aria-expanded={showTooltip}
+          aria-label={`IMI breakdown for ${track.name}`}
           className={`rounded-full border px-1.5 py-0.5 text-xs font-medium tabular-nums ${imiTierBg(imi.tier)}`}
         >
           {imi.score}
-        </span>
+        </button>
+        {showTooltip && breakdown}
       </div>
     </div>
   )

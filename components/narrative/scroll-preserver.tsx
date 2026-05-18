@@ -5,7 +5,7 @@ import { useEffect } from "react"
 const STORAGE_KEY = "story-scroll-y"
 
 export function ScrollPreserver() {
-  // Restore scroll position on mount
+  // Restore scroll position on mount, then clear the saved value
   useEffect(() => {
     const saved = sessionStorage.getItem(STORAGE_KEY)
     if (saved) {
@@ -15,13 +15,24 @@ export function ScrollPreserver() {
     }
   }, [])
 
-  // Save scroll position on unload (navigate away)
+  // Keep sessionStorage up-to-date on every scroll (debounced).
+  // This fires for both soft Next.js navigation and hard browser navigation,
+  // unlike beforeunload which only fires on tab close / full page reload.
   useEffect(() => {
-    function handleBeforeUnload() {
-      sessionStorage.setItem(STORAGE_KEY, String(window.scrollY))
+    let timer: ReturnType<typeof setTimeout>
+
+    function handleScroll() {
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        sessionStorage.setItem(STORAGE_KEY, String(window.scrollY))
+      }, 150)
     }
-    window.addEventListener("beforeunload", handleBeforeUnload)
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload)
+
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener("scroll", handleScroll)
+    }
   }, [])
 
   return null
