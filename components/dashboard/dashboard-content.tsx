@@ -16,12 +16,9 @@ import {
   songLengthTrend,
 } from "@/lib/data/macro-trends";
 import { formatDuration, formatPercent } from "@/lib/format";
-import { BubbleScoreTrendChart } from "@/components/visualizations/bubble-score-trend-chart";
 import { computeListeningProfile, ALGORITHMIC_ARCHETYPE } from "@/lib/analysis/listening-profile";
 import { computeTrackIMI, computeIMIAggregate, imiTierBg, IMI_ENGINEERED_THRESHOLD } from "@/lib/analysis/imi";
-import type { Archetype } from "@/lib/ai/archetype";
 import type { BubbleScoreResult, ScoreBreakdownItem } from "@/lib/analysis/bubble-score";
-import type { VisitRecord } from "@/lib/analysis/visit-tracking";
 import type { SpotifyProfile, TimeRange } from "@/lib/types/spotify";
 
 const TIME_RANGES: TimeRange[] = ["short_term", "medium_term", "long_term"];
@@ -44,9 +41,7 @@ type Props = {
   usingDemoData: boolean;
   initialRange: TimeRange;
   scoresByRange: Record<TimeRange, BubbleScoreResult>;
-  archetype: Archetype;
-  visitHistory: VisitRecord[];
-  trendNarrative: string | null;
+  shareHref: string;
 };
 
 export function DashboardContent({
@@ -54,14 +49,11 @@ export function DashboardContent({
   usingDemoData,
   initialRange,
   scoresByRange,
-  archetype,
-  visitHistory,
-  trendNarrative,
+  shareHref,
 }: Props) {
   const [range, setRange] = useState(initialRange);
   const score = scoresByRange[range];
   const currentData = profile.timeRanges[range];
-  const shareHref = usingDemoData ? "/share/demo-user" : `/share/${profile.userId}`;
 
   function selectRange(nextRange: TimeRange) {
     setRange(nextRange);
@@ -99,58 +91,6 @@ export function DashboardContent({
           </div>
         </div>
       </div>
-
-      {/* ── Listener Archetype ──────────────────────────────────── */}
-      <section className="panel panel-glow flex flex-col gap-3 p-6 sm:flex-row sm:items-start sm:gap-8 sm:p-8">
-        <div className="shrink-0">
-          <p className="eyebrow">Your listener archetype</p>
-          <p className="mt-1 text-2xl font-semibold text-[var(--accent)]">{archetype.name}</p>
-          <p className="mt-2 max-w-44 text-xs leading-5 text-[var(--text-muted)]">
-            Based on your 6-month listening profile.
-          </p>
-          {!usingDemoData && (
-            <div className="mt-3">
-              <InsightShareButton href={`${shareHref}/archetype`} label="Share archetype" />
-            </div>
-          )}
-        </div>
-        <p className="text-sm leading-7 text-[var(--text-muted)] sm:border-l sm:border-white/10 sm:pl-8">
-          {archetype.prose}
-        </p>
-      </section>
-
-      {/* ── Bubble Score Over Time ──────────────────────────────── */}
-      {visitHistory.length >= 2 ? (
-        <section className="panel flex flex-col gap-4 p-6 sm:p-8">
-          <div className="flex flex-col gap-1">
-            <p className="eyebrow">Filter bubble over time</p>
-            <h2 className="text-lg font-semibold text-[var(--text-strong)]">
-              Your score across visits
-            </h2>
-            {trendNarrative && (
-              <p className="text-sm leading-7 text-[var(--text-muted)]">{trendNarrative}</p>
-            )}
-          </div>
-          <BubbleScoreTrendChart
-            data={visitHistory.map(v => ({
-              label: new Date(v.visitedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-              score: v.bubbleScore,
-            }))}
-          />
-          <p className="text-xs text-[var(--text-muted)]">
-            Dashed lines mark tier boundaries: Wide Open / Narrowing / In the Loop / Deep in the Algorithm
-          </p>
-        </section>
-      ) : (
-        !usingDemoData && (
-          <section className="panel flex flex-col gap-2 p-6">
-            <p className="text-sm font-medium text-[var(--text-strong)]">Your trend starts here</p>
-            <p className="text-sm text-[var(--text-muted)]">
-              Come back in a few days and this section will show whether your filter bubble is widening or narrowing over time.
-            </p>
-          </section>
-        )
-      )}
 
       {/* ── Score hero ──────────────────────────────────────────── */}
       <section className="grid gap-5 lg:grid-cols-[1fr_272px]">
@@ -304,7 +244,6 @@ export function DashboardContent({
                       fill
                       sizes="36px"
                       className="object-cover"
-                      unoptimized
                     />
                   )}
                 </div>
@@ -382,7 +321,6 @@ export function DashboardContent({
                       fill
                       sizes="36px"
                       className="object-cover"
-                      unoptimized
                     />
                   )}
                 </div>

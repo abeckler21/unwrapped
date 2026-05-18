@@ -1,11 +1,11 @@
+import { Suspense } from "react";
 import Link from "next/link";
 
+import { ArchetypeServer, ArchetypeSkeleton } from "@/components/dashboard/archetype-server";
+import { TrendServer, TrendSkeleton } from "@/components/dashboard/trend-server";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
-import { getOrGenerateArchetype } from "@/lib/ai/archetype";
 import { computeBubbleScore } from "@/lib/analysis/bubble-score";
-import { recordVisit, getVisitHistory, generateTrendNarrative } from "@/lib/analysis/visit-tracking";
 import type { BubbleScoreResult } from "@/lib/analysis/bubble-score";
-import type { VisitRecord } from "@/lib/analysis/visit-tracking";
 import { getCurrentSpotifyProfile } from "@/lib/spotify/current-profile";
 import type { TimeRange } from "@/lib/types/spotify";
 
@@ -35,25 +35,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     long_term: computeBubbleScore(profile, "long_term"),
   };
 
-  let visitHistory: VisitRecord[] = [];
-  let trendNarrative: string | null = null;
-
-  const archetypePromise = getOrGenerateArchetype(
-    profile,
-    usingDemoData,
-    scoresByRange.medium_term,
-  );
-
-  if (!usingDemoData) {
-    await Promise.all([
-      archetypePromise,
-      recordVisit(profile.userId, scoresByRange.medium_term.score),
-    ]);
-    visitHistory = await getVisitHistory(profile.userId);
-    trendNarrative = await generateTrendNarrative(visitHistory);
-  }
-
-  const archetype = await archetypePromise;
+  const shareHref = usingDemoData ? "/share/demo-user" : `/share/${profile.userId}`;
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-5 py-6 sm:px-8 lg:px-10">
@@ -96,15 +78,35 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </div>
       </div>
 
-      <DashboardContent
-        profile={profile}
-        usingDemoData={usingDemoData}
-        initialRange={range}
-        scoresByRange={scoresByRange}
-        archetype={archetype}
-        visitHistory={visitHistory}
-        trendNarrative={trendNarrative}
-      />
+      <div className="flex flex-col gap-10">
+        {/* ── Archetype (streams in) ───────────────────────────────── */}
+        <Suspense fallback={<ArchetypeSkeleton />}>
+          <ArchetypeServer
+            profile={profile}
+            usingDemoData={usingDemoData}
+            score={scoresByRange.medium_term}
+            shareHref={shareHref}
+          />
+        </Suspense>
+
+        {/* ── Trend (streams in, also records visit) ──────────────── */}
+        <Suspense fallback={usingDemoData ? null : <TrendSkeleton />}>
+          <TrendServer
+            userId={profile.userId}
+            bubbleScore={scoresByRange.medium_term.score}
+            usingDemoData={usingDemoData}
+          />
+        </Suspense>
+
+        {/* ── Main content (renders immediately) ──────────────────── */}
+        <DashboardContent
+          profile={profile}
+          usingDemoData={usingDemoData}
+          initialRange={range}
+          scoresByRange={scoresByRange}
+          shareHref={shareHref}
+        />
+      </div>
     </main>
   );
 }

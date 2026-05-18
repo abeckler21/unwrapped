@@ -2,6 +2,8 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 
+export const revalidate = 3600
+
 import { readCachedArchetype } from "@/lib/ai/archetype"
 import { computeBubbleScore } from "@/lib/analysis/bubble-score"
 import { readCachedSpotifyProfile } from "@/lib/cache/spotify-profile-cache"
