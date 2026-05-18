@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 
 import { AlgorithmScoreCard } from "@/components/playlist/algorithm-score-card"
@@ -9,6 +10,16 @@ import { getValidAccessToken } from "@/lib/spotify/session"
 
 type Props = {
   params: Promise<{ playlistId: string }>
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { playlistId } = await params
+  const autopsy = await readCachedPlaylistAutopsy(playlistId)
+  if (!autopsy) return { title: "Playlist Autopsy — Unwrapped" }
+  return {
+    title: `${autopsy.name} — Playlist Autopsy — Unwrapped`,
+    description: `IMI analysis for "${autopsy.name}": how algorithmically engineered is this playlist?`,
+  }
 }
 
 export default async function PlaylistAutopsyPage({ params }: Props) {

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -22,6 +23,14 @@ import { getSpotifySession } from "@/lib/spotify/session";
 type Props = {
   params: Promise<{ sessionId: string }>;
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { sessionId } = await params
+  return {
+    title: `Compare · ${sessionId.slice(0, 8)} — Unwrapped`,
+    description: "Two algorithmic profiles, head-to-head. See whose taste the algorithm has shaped more.",
+  }
+}
 
 export default async function CompareSessionPage({ params }: Props) {
   const { sessionId } = await params;

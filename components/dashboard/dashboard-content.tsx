@@ -17,9 +17,10 @@ import {
 } from "@/lib/data/macro-trends";
 import { formatDuration, formatPercent } from "@/lib/format";
 import { computeListeningProfile, ALGORITHMIC_ARCHETYPE } from "@/lib/analysis/listening-profile";
-import { computeTrackIMI, computeIMIAggregate, imiTierBg, IMI_ENGINEERED_THRESHOLD } from "@/lib/analysis/imi";
+import { computeTrackIMI, computeIMIAggregate, imiTierBg, IMI_ENGINEERED_THRESHOLD } from "@/lib/analysis/imi"
+import type { IMIResult } from "@/lib/analysis/imi";
 import type { BubbleScoreResult, ScoreBreakdownItem } from "@/lib/analysis/bubble-score";
-import type { SpotifyProfile, TimeRange } from "@/lib/types/spotify";
+import type { SpotifyProfile, SpotifyTrack, TimeRange } from "@/lib/types/spotify";
 
 const TIME_RANGES: TimeRange[] = ["short_term", "medium_term", "long_term"];
 
@@ -306,48 +307,7 @@ export function DashboardContent({
           {currentData.topTracks.map((track, index) => {
             const imi = computeTrackIMI(track)
             return (
-              <div
-                key={track.id}
-                className="flex items-center gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-white/[0.04]"
-              >
-                <span className="w-5 shrink-0 text-right text-xs tabular-nums text-[var(--text-muted)]">
-                  {index + 1}
-                </span>
-                <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-md border border-white/10 bg-white/[0.06]">
-                  {track.album.images[0]?.url && (
-                    <Image
-                      src={track.album.images[0].url}
-                      alt={track.album.name}
-                      fill
-                      sizes="36px"
-                      className="object-cover"
-                    />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-[var(--text-strong)]">{track.name}</p>
-                  <p className="truncate text-xs text-[var(--text-muted)]">{track.artists.join(", ")}</p>
-                </div>
-                <span className="shrink-0 text-xs tabular-nums text-[var(--text-muted)]">
-                  {formatDuration(track.durationMs)}
-                </span>
-                {/* IMI badge — visible on sm+ */}
-                <div className="hidden w-24 shrink-0 items-center justify-end gap-2 sm:flex">
-                  <span
-                    className={`rounded-full border px-2 py-0.5 text-xs font-medium tabular-nums ${imiTierBg(imi.tier)}`}
-                  >
-                    {imi.score} · {imi.tier}
-                  </span>
-                </div>
-                {/* IMI score only — mobile */}
-                <div className="flex w-8 shrink-0 items-center justify-end sm:hidden">
-                  <span
-                    className={`rounded-full border px-1.5 py-0.5 text-xs font-medium tabular-nums ${imiTierBg(imi.tier)}`}
-                  >
-                    {imi.score}
-                  </span>
-                </div>
-              </div>
+              <IMITrackRow key={track.id} track={track} index={index} imi={imi} />
             )
           })}
         </div>
@@ -527,4 +487,106 @@ export function DashboardContent({
 
     </div>
   );
+}
+
+// ── IMI track row with breakdown tooltip ──────────────────────────────────────
+
+const IMI_LABELS: Record<keyof IMIResult["breakdown"], string> = {
+  duration:     "Duration alignment",
+  popularity:   "Popularity signal",
+  collaboration:"Collaboration",
+  recency:      "Recency bonus",
+  eraDeviation: "Era deviation",
+}
+
+const IMI_MAX: Record<keyof IMIResult["breakdown"], number> = {
+  duration: 30, popularity: 25, collaboration: 20, recency: 15, eraDeviation: 10,
+}
+
+function IMITrackRow({
+  track,
+  index,
+  imi,
+}: {
+  track: SpotifyTrack
+  index: number
+  imi: IMIResult
+}) {
+  const [showTooltip, setShowTooltip] = useState(false)
+
+  return (
+    <div
+      className="flex items-center gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-white/[0.04]"
+    >
+      <span className="w-5 shrink-0 text-right text-xs tabular-nums text-[var(--text-muted)]">
+        {index + 1}
+      </span>
+      <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-md border border-white/10 bg-white/[0.06]">
+        {track.album.images[0]?.url && (
+          <Image
+            src={track.album.images[0].url}
+            alt={track.album.name}
+            fill
+            sizes="36px"
+            className="object-cover"
+          />
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-[var(--text-strong)]">{track.name}</p>
+        <p className="truncate text-xs text-[var(--text-muted)]">{track.artists.join(", ")}</p>
+      </div>
+      <span className="shrink-0 text-xs tabular-nums text-[var(--text-muted)]">
+        {formatDuration(track.durationMs)}
+      </span>
+      {/* IMI badge — visible on sm+ */}
+      <div className="relative hidden w-24 shrink-0 items-center justify-end gap-2 sm:flex">
+        <button
+          type="button"
+          onMouseEnter={() => setShowTooltip(true)}
+          onMouseLeave={() => setShowTooltip(false)}
+          onFocus={() => setShowTooltip(true)}
+          onBlur={() => setShowTooltip(false)}
+          aria-label={`IMI breakdown for ${track.name}`}
+          className={`rounded-full border px-2 py-0.5 text-xs font-medium tabular-nums cursor-default ${imiTierBg(imi.tier)}`}
+        >
+          {imi.score} · {imi.tier}
+        </button>
+        {showTooltip && (
+          <div className="absolute bottom-full right-0 z-50 mb-2 w-52 rounded-xl border border-white/10 bg-[#111] p-3 shadow-xl">
+            <p className="mb-2 text-xs font-semibold text-[var(--text-soft)]">IMI Breakdown</p>
+            <div className="flex flex-col gap-1.5">
+              {(Object.keys(imi.breakdown) as (keyof IMIResult["breakdown"])[]).map((key) => {
+                const val = imi.breakdown[key]
+                const max = IMI_MAX[key]
+                return (
+                  <div key={key}>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-[var(--text-muted)]">{IMI_LABELS[key]}</span>
+                      <span className="tabular-nums text-[var(--text-soft)]">{val}/{max}</span>
+                    </div>
+                    <div className="mt-0.5 h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
+                      <div
+                        className="h-full rounded-full bg-[var(--accent)]/60"
+                        style={{ width: `${(val / max) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="mt-2 text-[10px] text-[var(--text-muted)]">Total: {imi.score}/100</p>
+          </div>
+        )}
+      </div>
+      {/* IMI score only — mobile */}
+      <div className="flex w-8 shrink-0 items-center justify-end sm:hidden">
+        <span
+          className={`rounded-full border px-1.5 py-0.5 text-xs font-medium tabular-nums ${imiTierBg(imi.tier)}`}
+        >
+          {imi.score}
+        </span>
+      </div>
+    </div>
+  )
 }

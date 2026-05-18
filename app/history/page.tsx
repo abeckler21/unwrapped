@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -6,6 +7,11 @@ import { getGenreHistoriesWithFailures } from "@/lib/ai/genre-history";
 import { getCurrentSpotifyProfile } from "@/lib/spotify/current-profile";
 import { computeBubbleScore } from "@/lib/analysis/bubble-score";
 import type { GenreHistory } from "@/lib/ai/genre-history";
+
+export const metadata: Metadata = {
+  title: "Music History — Unwrapped",
+  description: "The origins and lineage of the genres you love — pioneers, timelines, and cultural context.",
+}
 
 export default async function HistoryPage() {
   const { profile, usingDemoData } = await getCurrentSpotifyProfile();
@@ -22,9 +28,7 @@ export default async function HistoryPage() {
   let failedGenres: string[] = [];
   let error: string | null = null;
 
-  if (usingDemoData) {
-    error = "Log in with Spotify to generate genre histories for your actual top genres.";
-  } else try {
+  try {
     const result = await getGenreHistoriesWithFailures(genresToFetch);
     histories = result.histories;
     failedGenres = result.failedGenres;

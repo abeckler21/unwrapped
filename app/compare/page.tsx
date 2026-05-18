@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { ShareLink } from "@/components/compare/share-link";
+
+export const metadata: Metadata = {
+  title: "Compare — Unwrapped",
+  description: "Compare your algorithmic profile side-by-side with a friend.",
+}
 import { getOrCreateCompareSession } from "@/lib/compare/sessions";
 import { getSpotifySession } from "@/lib/spotify/session";
 

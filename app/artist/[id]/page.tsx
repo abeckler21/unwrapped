@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 
@@ -10,6 +11,16 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 
 type Props = {
   params: Promise<{ id: string }>
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params
+  const analysis = await readCachedArtistAnalysis(id)
+  if (!analysis) return { title: "Artist — Unwrapped" }
+  return {
+    title: `${analysis.name} — Unwrapped`,
+    description: `AOI analysis, discography, and career arc for ${analysis.name}.`,
+  }
 }
 
 // Allow IDs not in generateStaticParams to be rendered on-demand

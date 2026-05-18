@@ -5,6 +5,7 @@ import { computeBubbleScore } from "@/lib/analysis/bubble-score"
 import { readCachedEscapeRecs } from "@/lib/escape/cache"
 import { getCurrentSpotifyProfile } from "@/lib/spotify/current-profile"
 import { NarrativeContent } from "@/components/narrative/narrative-content"
+import { ScrollPreserver } from "@/components/narrative/scroll-preserver"
 import type { Archetype } from "@/lib/ai/archetype"
 import type { BubbleScoreResult } from "@/lib/analysis/bubble-score"
 import type { EscapeRecommendation } from "@/lib/escape/pipeline"
@@ -68,6 +69,7 @@ export default async function StoryPage() {
 
   return (
     <main>
+      <ScrollPreserver />
       <Suspense fallback={<StorySkeleton />}>
         <StoryNarrative
           profile={profile}
