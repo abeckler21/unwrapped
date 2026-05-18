@@ -59,7 +59,7 @@ export default async function PlaylistAutopsyPage({ params }: Props) {
           href="/playlist"
           className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-[var(--text-soft)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
         >
-          ← Analyze another playlist
+          ← Analyze
         </Link>
         <div className="panel p-6">
           <p className="text-sm font-semibold text-[var(--text-strong)]">Could not load this playlist</p>
@@ -85,7 +85,7 @@ export default async function PlaylistAutopsyPage({ params }: Props) {
           href="/playlist"
           className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-[var(--text-soft)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
         >
-          ← Analyze another playlist
+          ← Analyze
         </Link>
 
         <div className="mt-6 flex items-center gap-4">

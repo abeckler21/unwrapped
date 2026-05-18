@@ -34,8 +34,7 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // X-Frame-Options only on non-widget routes (widgets are meant to be embedded)
-        source: "/((?!widget).*)",
+        source: "/(.*)",
         headers: [{ key: "X-Frame-Options", value: "SAMEORIGIN" }],
       },
     ];

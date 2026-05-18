@@ -14,10 +14,8 @@ const NAV_LINKS = [
   { href: "/history", label: "History", authRequired: false },
   { href: "/explore", label: "Explore", authRequired: false },
   { href: "/compare", label: "Compare", authRequired: true },
-  { href: "/widgets", label: "Widgets", authRequired: true },
   { href: "/escape", label: "Escape", authRequired: true },
-  { href: "/playlist", label: "Playlist", authRequired: true },
-  { href: "/artist", label: "Artist", authRequired: true },
+  { href: "/artist", label: "Analyze", authRequired: true },
 ]
 
 export function MobileNav({ hasActiveSession }: Props) {

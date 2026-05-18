@@ -2,8 +2,8 @@ import type { Metadata } from "next"
 import type { ReactNode } from "react"
 
 export const metadata: Metadata = {
-  title: "Artist Search — Unwrapped",
-  description: "Look up any artist's AOI trend and career discography.",
+  title: "Analyze — Unwrapped",
+  description: "Deep-dive into an artist's career arc or autopsy any public Spotify playlist.",
 }
 
 export default function ArtistLayout({ children }: { children: ReactNode }) {

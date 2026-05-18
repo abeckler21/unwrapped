@@ -83,7 +83,7 @@ export default async function ArtistPage({ params }: Props) {
           href="/artist"
           className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-[var(--text-soft)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
         >
-          ← Search artists
+          ← Analyze
         </Link>
         <div className="panel p-6">
           <p className="text-sm font-semibold text-[var(--text-strong)]">Could not load artist</p>
@@ -122,7 +122,7 @@ export default async function ArtistPage({ params }: Props) {
           href="/artist"
           className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-[var(--text-soft)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
         >
-          ← Search artists
+          ← Analyze
         </Link>
 
         <div className="mt-6 flex items-center gap-5">
