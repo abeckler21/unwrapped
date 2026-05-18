@@ -141,3 +141,11 @@ export const revalidate = 3600 was added to all four share sub-pages (/share/[us
 HTTP security headers were added to next.config.ts via an async headers() function. X-Content-Type-Options, X-XSS-Protection, Referrer-Policy, and Permissions-Policy are set on all routes. X-Frame-Options: SAMEORIGIN is set on all routes except /widget/*, which is intentionally designed for iframe embedding.
 
 A loading skeleton was added for the /explore route (app/explore/loading.tsx). The page previously had no loading.tsx despite containing a heavy client-side D3 world map. The skeleton mirrors the page structure: hero text, three context cards, a tall map placeholder, and a chart placeholder.
+
+V4 continued with two further improvements to the artist page and dashboard resilience.
+
+The /artist/[id] page was restructured so that getValidAccessToken() is only called when a Spotify fetch is actually needed. Previously it ran unconditionally at the top of the page, before even checking the Supabase artist cache. The new order is: read from artist_cache first; if a cached analysis exists, render it immediately with no auth required; only if the cache is empty does the page check for a valid token and call Spotify. This makes cached artist pages publicly accessible — demo users and share link viewers can now browse any previously-analyzed artist without logging in — and removes the unnecessary cookie read on every cache-hit request.
+
+generateStaticParams was added to app/artist/[id]/page.tsx. It queries the artist_cache table in Supabase at build time and returns all stored artist IDs (up to 200). Vercel pre-renders those pages as static HTML at deploy time, so dashboard artist links navigate instantly for any artist that has been analyzed before. export const dynamicParams = true keeps the existing SSR fallback for artist IDs not yet in the cache.
+
+Error boundaries were added to both streaming dashboard components. ArchetypeServer now wraps the entire getOrGenerateArchetype call in a try/catch: on any unexpected error it returns a one-line fallback message inside the panel shape so the page continues rendering normally. TrendServer wraps its entire body in a try/catch and returns null on error, causing the trend section to disappear silently rather than propagating the exception up through the Suspense boundary and crashing the dashboard route.
