@@ -76,7 +76,6 @@ export function computeDivergenceScore(
   const keys: ScoreBreakdownItem['key'][] = [
     'genreConcentration',
     'artistRepetition',
-    'popularitySkew',
     'temporalConsistency',
   ]
 

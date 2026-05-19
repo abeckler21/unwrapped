@@ -10,7 +10,6 @@ import { computeIMIAggregate, IMI_ENGINEERED_THRESHOLD } from "@/lib/analysis/im
 import {
   songLengthTrend,
   genreShareTrend,
-  popularityConcentrationTrend,
 } from "@/lib/data/macro-trends"
 import type { BubbleScoreResult } from "@/lib/analysis/bubble-score"
 import type { Archetype } from "@/lib/ai/archetype"
@@ -134,9 +133,6 @@ export function NarrativeContent({
 
   const genre2024 = genreShareTrend[genreShareTrend.length - 1]
   const popHipHop = genre2024.pop + genre2024.hipHop
-
-  const earliest = popularityConcentrationTrend[0]
-  const latest = popularityConcentrationTrend[popularityConcentrationTrend.length - 1]
 
   // Genre gaps for chapter 4
   const userGenreNames = score.genreDistribution.map((g) => g.genre)
@@ -419,33 +415,6 @@ export function NarrativeContent({
               </div>
             </ScrollReveal>
 
-            <ScrollReveal delay={400}>
-              <div className="rounded-2xl border border-white/8 bg-white/[0.025] p-6">
-                <div className="flex items-baseline gap-4 flex-wrap">
-                  <div>
-                    <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">
-                      {earliest.year}
-                    </p>
-                    <p className="text-5xl font-bold tabular-nums text-[var(--text-strong)]">
-                      {earliest.artistsForHalfOfStreams}
-                    </p>
-                  </div>
-                  <div className="text-3xl text-[var(--text-muted)]">&#8594;</div>
-                  <div>
-                    <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">
-                      {latest.year}
-                    </p>
-                    <p className="text-5xl font-bold tabular-nums text-[var(--accent)]">
-                      {latest.artistsForHalfOfStreams}
-                    </p>
-                  </div>
-                </div>
-                <p className="mt-4 text-[var(--text-soft)]">
-                  Artists needed to account for 50% of all streams. The music
-                  economy is concentrating as fast as the listening is.
-                </p>
-              </div>
-            </ScrollReveal>
           </div>
 
           {/* IMI personal bridge */}
@@ -470,7 +439,7 @@ export function NarrativeContent({
                       : "A significant slice of your listening is platform-optimized."}
                 </p>
                 <p className="mt-3 text-sm text-[var(--text-muted)]">
-                  IMI measures song length vs. era average, popularity, collaborations,
+                  IMI measures song length vs. era average, collaborations,
                   and release recency. See the full breakdown on the Dashboard.
                 </p>
               </div>

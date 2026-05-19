@@ -34,7 +34,7 @@ export default function Home() {
           <div>
             <h2 className="text-xl font-semibold text-[var(--text-strong)]">Filter Bubble Score</h2>
             <p className="mt-3 text-sm leading-7 text-[var(--text-muted)]">
-              A composite measure of how narrow your listening has become — built from genre concentration, artist repetition, popularity skew, and how much your taste has converged over time. Every sub-score is explained, not hidden.
+              A composite measure of how narrow your listening has become — built from genre concentration, artist repetition, and how much your taste has converged over time. Every sub-score is explained, not hidden.
             </p>
           </div>
         </article>

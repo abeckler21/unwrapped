@@ -10,7 +10,6 @@ export type ScoreBreakdownItem = {
   key:
     | "genreConcentration"
     | "artistRepetition"
-    | "popularitySkew"
     | "temporalConsistency";
   label: string;
   score: number;
@@ -37,10 +36,9 @@ export type BubbleScoreResult = {
 };
 
 const SCORE_WEIGHTS = {
-  genreConcentration: 0.4,
-  artistRepetition: 0.25,
-  popularitySkew: 0.15,
-  temporalConsistency: 0.2,
+  genreConcentration: 0.45,
+  artistRepetition: 0.30,
+  temporalConsistency: 0.25,
 } as const;
 
 function clamp(value: number, min: number, max: number) {
@@ -115,17 +113,6 @@ function computeArtistRepetitionScore(artists: SpotifyArtist[]) {
   return normalizeToPercent(topFiveWeight / totalWeight);
 }
 
-function computePopularitySkewScore(tracks: SpotifyTrack[]) {
-  if (!tracks.length) {
-    return 0;
-  }
-
-  const averagePopularity =
-    tracks.reduce((sum, track) => sum + track.popularity, 0) / tracks.length;
-
-  return round(averagePopularity);
-}
-
 function cosineSimilarity(
   left: Array<{ genre: string; share: number }>,
   right: Array<{ genre: string; share: number }>,
@@ -174,15 +161,10 @@ function estimateAlgorithmicRatio(profile: SpotifyProfile, timeRange: TimeRange)
       : false,
   ).length;
 
-  const popularityBias =
-    profile.timeRanges[timeRange].topTracks.reduce((sum, track) => sum + track.popularity, 0) /
-    Math.max(profile.timeRanges[timeRange].topTracks.length, 1);
+  const playlistSignal = clamp(algorithmicPlaylistIds.size / 4, 0, 1) * 0.45;
+  const contextSignal = clamp(algorithmicContexts / Math.max(profile.recentlyPlayed.length, 1), 0, 1) * 0.55;
 
-  const playlistSignal = clamp(algorithmicPlaylistIds.size / 4, 0, 1) * 0.35;
-  const contextSignal = clamp(algorithmicContexts / Math.max(profile.recentlyPlayed.length, 1), 0, 1) * 0.4;
-  const popularitySignal = clamp((popularityBias - 45) / 45, 0, 1) * 0.25;
-
-  const algorithmicRatio = round(clamp(playlistSignal + contextSignal + popularitySignal, 0.08, 0.92) * 100);
+  const algorithmicRatio = round(clamp(playlistSignal + contextSignal, 0.08, 0.92) * 100);
 
   return {
     algorithmicRatio,
@@ -221,12 +203,10 @@ export function computeBubbleScore(
   const selectedRange = profile.timeRanges[timeRange];
   const genreConcentration = computeGenreConcentrationScore(selectedRange.topArtists);
   const artistRepetition = computeArtistRepetitionScore(selectedRange.topArtists);
-  const popularitySkew = computePopularitySkewScore(selectedRange.topTracks);
   const temporalConsistency = computeTemporalConsistencyScore(profile);
   const weightedScore =
     genreConcentration.score * SCORE_WEIGHTS.genreConcentration +
     artistRepetition * SCORE_WEIGHTS.artistRepetition +
-    popularitySkew * SCORE_WEIGHTS.popularitySkew +
     temporalConsistency * SCORE_WEIGHTS.temporalConsistency;
 
   const score = round(weightedScore);
@@ -268,14 +248,6 @@ export function computeBubbleScore(
         weight: SCORE_WEIGHTS.artistRepetition,
         explanation:
           "This estimates how much of your listening weight goes to the same small set of artists instead of a broader long tail.",
-      },
-      {
-        key: "popularitySkew",
-        label: "Popularity skew",
-        score: popularitySkew,
-        weight: SCORE_WEIGHTS.popularitySkew,
-        explanation:
-          "Higher average popularity suggests safer, more heavily promoted listening patterns, though this remains an estimate.",
       },
       {
         key: "temporalConsistency",

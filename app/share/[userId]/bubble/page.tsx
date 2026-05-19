@@ -28,7 +28,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 const BREAKDOWN_LABELS: Record<string, string> = {
   genreConcentration: "Genre concentration",
   artistRepetition: "Artist repetition",
-  popularitySkew: "Popularity skew",
   temporalConsistency: "Taste consistency",
 }
 

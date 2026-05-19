@@ -89,7 +89,6 @@ export const mockProfile: SpotifyProfile = {
           name: "Big Thief",
           genres: ["indie folk", "chamber pop"],
           followers: 1580000,
-          popularity: 74,
           images: [image("photo-1516280440614-37939bbacd81")],
         },
         {
@@ -97,7 +96,6 @@ export const mockProfile: SpotifyProfile = {
           name: "Mk.gee",
           genres: ["art pop", "alternative r&b"],
           followers: 420000,
-          popularity: 71,
           images: [image("photo-1493225457124-a3eb161ffa5f")],
         },
         {
@@ -105,7 +103,6 @@ export const mockProfile: SpotifyProfile = {
           name: "Alex G",
           genres: ["indie rock", "slowcore"],
           followers: 1300000,
-          popularity: 77,
           images: [image("photo-1511379938547-c1f69419868d")],
         },
         {
@@ -113,7 +110,6 @@ export const mockProfile: SpotifyProfile = {
           name: "Adrianne Lenker",
           genres: ["indie folk", "singer-songwriter"],
           followers: 880000,
-          popularity: 72,
           images: [image("photo-1506157786151-b8491531f063")],
         },
         {
@@ -121,7 +117,6 @@ export const mockProfile: SpotifyProfile = {
           name: "Bakar",
           genres: ["indie soul", "alternative r&b"],
           followers: 520000,
-          popularity: 70,
           images: [image("photo-1507838153414-b4b713384a76")],
         },
       ],
@@ -137,7 +132,6 @@ export const mockProfile: SpotifyProfile = {
             images: [image("photo-1496293455970-f8581aae0e3b")],
           },
           durationMs: 192000,
-          popularity: 73,
           explicit: false,
         },
         {
@@ -151,7 +145,6 @@ export const mockProfile: SpotifyProfile = {
             images: [image("photo-1498038432885-c6f3f1b912ee")],
           },
           durationMs: 160000,
-          popularity: 69,
           explicit: false,
         },
         {
@@ -165,7 +158,6 @@ export const mockProfile: SpotifyProfile = {
             images: [image("photo-1501386761578-eac5c94b800a")],
           },
           durationMs: 144000,
-          popularity: 71,
           explicit: false,
         },
         {
@@ -179,7 +171,6 @@ export const mockProfile: SpotifyProfile = {
             images: [image("photo-1494232410401-ad00d5433cfa")],
           },
           durationMs: 146000,
-          popularity: 67,
           explicit: false,
         },
         {
@@ -193,7 +184,6 @@ export const mockProfile: SpotifyProfile = {
             images: [image("photo-1493225457124-a3eb161ffa5f")],
           },
           durationMs: 213000,
-          popularity: 78,
           explicit: true,
         },
       ],
@@ -205,7 +195,6 @@ export const mockProfile: SpotifyProfile = {
           name: "Big Thief",
           genres: ["indie folk", "chamber pop"],
           followers: 1580000,
-          popularity: 74,
           images: [image("photo-1516280440614-37939bbacd81")],
         },
         {
@@ -213,7 +202,6 @@ export const mockProfile: SpotifyProfile = {
           name: "SZA",
           genres: ["r&b", "pop", "neo soul"],
           followers: 17000000,
-          popularity: 92,
           images: [image("photo-1487180144351-b8472da7d491")],
         },
         {
@@ -221,7 +209,6 @@ export const mockProfile: SpotifyProfile = {
           name: "Frank Ocean",
           genres: ["alternative r&b", "neo soul"],
           followers: 13200000,
-          popularity: 88,
           images: [image("photo-1496293455970-f8581aae0e3b")],
         },
         {
@@ -229,7 +216,6 @@ export const mockProfile: SpotifyProfile = {
           name: "Alex G",
           genres: ["indie rock", "slowcore"],
           followers: 1300000,
-          popularity: 77,
           images: [image("photo-1511379938547-c1f69419868d")],
         },
         {
@@ -237,7 +223,6 @@ export const mockProfile: SpotifyProfile = {
           name: "Charli xcx",
           genres: ["art pop", "electropop", "hyperpop"],
           followers: 9600000,
-          popularity: 89,
           images: [image("photo-1493225457124-a3eb161ffa5f")],
         },
       ],
@@ -253,7 +238,6 @@ export const mockProfile: SpotifyProfile = {
             images: [image("photo-1487180144351-b8472da7d491")],
           },
           durationMs: 231000,
-          popularity: 81,
           explicit: true,
         },
         {
@@ -267,7 +251,6 @@ export const mockProfile: SpotifyProfile = {
             images: [image("photo-1485579149621-3123dd979885")],
           },
           durationMs: 184000,
-          popularity: 86,
           explicit: false,
         },
         {
@@ -281,7 +264,6 @@ export const mockProfile: SpotifyProfile = {
             images: [image("photo-1516280440614-37939bbacd81")],
           },
           durationMs: 133000,
-          popularity: 90,
           explicit: true,
         },
         {
@@ -295,7 +277,6 @@ export const mockProfile: SpotifyProfile = {
             images: [image("photo-1496293455970-f8581aae0e3b")],
           },
           durationMs: 192000,
-          popularity: 73,
           explicit: false,
         },
         {
@@ -309,7 +290,6 @@ export const mockProfile: SpotifyProfile = {
             images: [image("photo-1501386761578-eac5c94b800a")],
           },
           durationMs: 144000,
-          popularity: 71,
           explicit: false,
         },
       ],
@@ -321,7 +301,6 @@ export const mockProfile: SpotifyProfile = {
           name: "Radiohead",
           genres: ["alternative rock", "art rock"],
           followers: 12500000,
-          popularity: 84,
           images: [image("photo-1507838153414-b4b713384a76")],
         },
         {
@@ -329,7 +308,6 @@ export const mockProfile: SpotifyProfile = {
           name: "Kendrick Lamar",
           genres: ["hip hop", "west coast rap"],
           followers: 23000000,
-          popularity: 94,
           images: [image("photo-1501386761578-eac5c94b800a")],
         },
         {
@@ -337,7 +315,6 @@ export const mockProfile: SpotifyProfile = {
           name: "Frank Ocean",
           genres: ["alternative r&b", "neo soul"],
           followers: 13200000,
-          popularity: 88,
           images: [image("photo-1485579149621-3123dd979885")],
         },
         {
@@ -345,7 +322,6 @@ export const mockProfile: SpotifyProfile = {
           name: "Phoebe Bridgers",
           genres: ["indie rock", "indie folk"],
           followers: 5100000,
-          popularity: 82,
           images: [image("photo-1494232410401-ad00d5433cfa")],
         },
         {
@@ -353,7 +329,6 @@ export const mockProfile: SpotifyProfile = {
           name: "Alex G",
           genres: ["indie rock", "slowcore"],
           followers: 1300000,
-          popularity: 77,
           images: [image("photo-1511379938547-c1f69419868d")],
         },
       ],
@@ -369,7 +344,6 @@ export const mockProfile: SpotifyProfile = {
             images: [image("photo-1485579149621-3123dd979885")],
           },
           durationMs: 251000,
-          popularity: 74,
           explicit: false,
         },
         {
@@ -383,7 +357,6 @@ export const mockProfile: SpotifyProfile = {
             images: [image("photo-1487180144351-b8472da7d491")],
           },
           durationMs: 386000,
-          popularity: 87,
           explicit: true,
         },
         {
@@ -397,7 +370,6 @@ export const mockProfile: SpotifyProfile = {
             images: [image("photo-1485579149621-3123dd979885")],
           },
           durationMs: 184000,
-          popularity: 86,
           explicit: false,
         },
         {
@@ -411,7 +383,6 @@ export const mockProfile: SpotifyProfile = {
             images: [image("photo-1494232410401-ad00d5433cfa")],
           },
           durationMs: 229000,
-          popularity: 79,
           explicit: false,
         },
         {
@@ -425,7 +396,6 @@ export const mockProfile: SpotifyProfile = {
             images: [image("photo-1501386761578-eac5c94b800a")],
           },
           durationMs: 144000,
-          popularity: 71,
           explicit: false,
         },
       ],

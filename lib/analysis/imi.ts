@@ -6,11 +6,10 @@
  * preview pipeline or deprecated endpoints required.
  *
  * Components (max 100):
- *   Duration alignment  0–30  closeness to the 3:00 streaming sweet spot
- *   Popularity          0–25  raw Spotify popularity as an algorithmic-surfacing proxy
- *   Collaboration       0–20  features/collabs are a documented industry tactic
- *   Recency             0–15  new releases receive algorithmic push
- *   Era deviation       0–10  how much shorter than the era's Billboard average
+ *   Duration alignment  0–40  closeness to the 3:00 streaming sweet spot
+ *   Collaboration       0–27  features/collabs are a documented industry tactic
+ *   Recency             0–20  new releases receive algorithmic push
+ *   Era deviation       0–13  how much shorter than the era's Billboard average
  */
 
 import { songLengthTrend } from "@/lib/data/macro-trends"
@@ -23,8 +22,6 @@ export type IMITier = "Organic" | "Adapted" | "Optimized" | "Engineered"
 export type IMIBreakdown = {
   /** Closeness to 3:00 sweet spot (0–30) */
   duration: number
-  /** Popularity as algorithmic-surfacing signal (0–25) */
-  popularity: number
   /** Feature/collab presence (0–20) */
   collaboration: number
   /** Release recency bonus (0–15) */
@@ -91,29 +88,28 @@ export function computeTrackIMI(track: SpotifyTrack): IMIResult {
   const durationDeviation = Math.abs(durationMin - 3.0)
   const duration = Math.round(Math.max(0, 30 - durationDeviation * 22))
 
-  // 2. Popularity: linear mapping 0–100 → 0–25
-  const popularity = Math.round((track.popularity / 100) * 25)
-
-  // 3. Collaboration: solo = 0, one feature = 12, two or more = 20
+  // 2. Collaboration: solo = 0, one feature = 12, two or more = 20
   const collaboration =
     track.artists.length === 1 ? 0 : track.artists.length === 2 ? 12 : 20
 
-  // 4. Recency: new releases get algorithmic push for ~2 years
+  // 3. Recency: new releases get algorithmic push for ~2 years
   const currentYear = new Date().getFullYear()
   const age = currentYear - releaseYear
   const recency = age <= 0 ? 15 : age <= 2 ? 8 : 0
 
-  // 5. Era deviation: reward being shorter than the era's Billboard average
+  // 4. Era deviation: reward being shorter than the era's Billboard average
   const eraAvgMin = getEraAverageDurationMin(releaseYear)
   const shortness = Math.max(0, eraAvgMin - durationMin)
   const eraDeviation = Math.min(10, Math.round(shortness * 12))
 
-  const score = Math.min(100, duration + popularity + collaboration + recency + eraDeviation)
+  // Scale from max 75 to 0–100
+  const rawScore = duration + collaboration + recency + eraDeviation
+  const score = Math.min(100, Math.round((rawScore / 75) * 100))
 
   return {
     score,
     tier: getIMITier(score),
-    breakdown: { duration, popularity, collaboration, recency, eraDeviation },
+    breakdown: { duration, collaboration, recency, eraDeviation },
   }
 }
 

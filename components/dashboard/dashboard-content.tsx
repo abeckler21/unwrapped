@@ -12,7 +12,6 @@ import { InsightShareButton } from "@/components/dashboard/insight-share-button"
 import {
   genreShareTrend,
   macroSources,
-  popularityConcentrationTrend,
   songLengthTrend,
 } from "@/lib/data/macro-trends";
 import { formatDuration, formatPercent } from "@/lib/format";
@@ -33,7 +32,6 @@ const TIME_RANGE_LABELS: Record<TimeRange, string> = {
 const BREAKDOWN_CONTEXT: Record<ScoreBreakdownItem["key"], string> = {
   genreConcentration: "High = narrower genre mix",
   artistRepetition: "High = same artists repeat",
-  popularitySkew: "High = more mainstream",
   temporalConsistency: "High = taste is looping",
 };
 
@@ -315,7 +313,7 @@ export function DashboardContent({
         {/* IMI methodology note */}
         <p className="border-t border-white/6 pt-3 text-xs text-[var(--text-muted)]">
           IMI = Industry Manipulation Index. Scores how algorithmically optimized each track is
-          for the streaming era, based on song length, popularity, features, recency, and how short
+          for the streaming era, based on song length, features, recency, and how short
           the track is relative to its era&apos;s average hit. Higher = more engineered for the platform.
           Engineered threshold: {IMI_ENGINEERED_THRESHOLD}+.
         </p>
@@ -391,7 +389,7 @@ export function DashboardContent({
           </p>
         </div>
 
-        <div className="grid gap-5 lg:grid-cols-3">
+        <div className="grid gap-5 lg:grid-cols-2">
           <article className="panel flex flex-col gap-4">
             <div>
               <p className="eyebrow" style={{ fontSize: "0.65rem" }}>Trend 01</p>
@@ -439,32 +437,6 @@ export function DashboardContent({
                 : "Genre metadata unavailable. The macro trend holds regardless."}
             </p>
           </article>
-
-          <article className="panel flex flex-col gap-4">
-            <div>
-              <p className="eyebrow" style={{ fontSize: "0.65rem" }}>Trend 03</p>
-              <h3 className="mt-1 text-base font-semibold text-[var(--text-strong)]">
-                Fewer artists, more streams
-              </h3>
-            </div>
-            <MacroTrendChart
-              type="line"
-              data={popularityConcentrationTrend}
-              xKey="year"
-              yKeys={[
-                {
-                  key: "artistsForHalfOfStreams",
-                  label: "Artists for 50% of streams",
-                  color: "#38bdf8",
-                },
-              ]}
-              yAxisLabel="Artists"
-            />
-            <p className="text-sm leading-6 text-[var(--text-muted)]">
-              Your top 5 artists dominate your score — mirroring a market consolidating around
-              fewer repeat winners.
-            </p>
-          </article>
         </div>
       </section>
 
@@ -473,7 +445,7 @@ export function DashboardContent({
         <div>
           <p className="eyebrow">Honesty note</p>
           <p className="mt-2 max-w-lg text-sm leading-7 text-[var(--text-muted)]">
-            The organic/algorithmic split is inferred from playlist names and popularity signals —
+            The organic/algorithmic split is inferred from playlist names and listening context —
             not measured directly. The score is explanatory, not diagnostic. Macro trends are
             preloaded from the source set listed here and should be read as directional context.
           </p>
@@ -493,14 +465,13 @@ export function DashboardContent({
 
 const IMI_LABELS: Record<keyof IMIResult["breakdown"], string> = {
   duration:     "Duration alignment",
-  popularity:   "Popularity signal",
   collaboration:"Collaboration",
   recency:      "Recency bonus",
   eraDeviation: "Era deviation",
 }
 
 const IMI_MAX: Record<keyof IMIResult["breakdown"], number> = {
-  duration: 30, popularity: 25, collaboration: 20, recency: 15, eraDeviation: 10,
+  duration: 30, collaboration: 20, recency: 15, eraDeviation: 10,
 }
 
 function IMITrackRow({

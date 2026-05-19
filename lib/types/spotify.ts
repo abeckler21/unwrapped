@@ -11,7 +11,6 @@ export type SpotifyArtist = {
   name: string;
   genres?: string[];
   followers: number;
-  popularity: number;
   images: SpotifyImage[];
 };
 
@@ -28,7 +27,6 @@ export type SpotifyTrack = {
   artists: string[];
   album: SpotifyAlbum;
   durationMs: number;
-  popularity: number;
   explicit: boolean;
 };
 

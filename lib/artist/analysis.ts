@@ -11,7 +11,6 @@ export type AlbumAnalysis = {
   trackCount: number
   avgDurationMs: number
   collabRate: number   // 0–1: fraction of tracks with ≥2 artists
-  popularity: number
   aoi: number          // Algorithm Optimization Index, 0–100
 }
 
@@ -21,9 +20,7 @@ export type ArtistAnalysis = {
   imageUrl: string | null
   genres: string[]
   followers: number
-  popularity: number
   albums: AlbumAnalysis[]
-  popularityTrajectory: { year: number; popularity: number }[]
   genreDrift: string[]  // most recent genres vs earliest genres (narrative)
 }
 
@@ -47,7 +44,6 @@ type SpotifyArtist = {
   images: { url: string }[]
   genres: string[]
   followers: { total: number }
-  popularity: number
 }
 
 type SpotifyAlbumSummary = {
@@ -144,7 +140,6 @@ export async function analyzeArtist(
         trackCount: tracks.length,
         avgDurationMs: Math.round(avgDurationMs),
         collabRate: Math.round(collabRate * 100) / 100,
-        popularity: 0,
         aoi,
       })
     } catch {
@@ -153,10 +148,7 @@ export async function analyzeArtist(
   }
   albums.sort((a, b) => a.releaseYear - b.releaseYear)
 
-  // 4. Popularity trajectory — not available without batch album fetch, omit
-  const popularityTrajectory: { year: number; popularity: number }[] = []
-
-  // 6. Genre drift (first vs last 3 years of releases)
+  // 4. Genre drift (first vs last 3 years of releases)
   const years = albums.map((a) => a.releaseYear)
   const minYear = Math.min(...years)
   const maxYear = Math.max(...years)
@@ -176,9 +168,7 @@ export async function analyzeArtist(
     imageUrl: artist.images?.[0]?.url ?? null,
     genres: artist.genres ?? [],
     followers: artist.followers?.total ?? 0,
-    popularity: artist.popularity ?? 0,
     albums,
-    popularityTrajectory,
     genreDrift,
   }
 }

@@ -38,8 +38,7 @@ export default async function Image({ params }: { params: Promise<{ userId: stri
   const breakdownLabels: Record<string, string> = {
     genreConcentration: "Genre concentration",
     artistRepetition: "Artist repetition",
-    popularitySkew: "Popularity skew",
-    temporalConsistency: "Taste consistency",
+      temporalConsistency: "Taste consistency",
   }
 
   return new ImageResponse(

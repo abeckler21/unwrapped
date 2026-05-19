@@ -65,7 +65,7 @@ export default async function SharePage({ params }: SharePageProps) {
 
         <div className="mt-8 rounded-[24px] border border-white/10 bg-black/20 p-5">
           <p className="text-sm leading-7 text-[var(--text-muted)]">
-            Estimated listening split: {formatPercent(score.organicRatio)} organic, {formatPercent(score.algorithmicRatio)} algorithmic. This is an inference based on context and popularity signals, not direct Spotify attribution.
+            Estimated listening split: {formatPercent(score.organicRatio)} organic, {formatPercent(score.algorithmicRatio)} algorithmic. This is an inference based on playlist names and listening context, not direct Spotify attribution.
           </p>
         </div>
 

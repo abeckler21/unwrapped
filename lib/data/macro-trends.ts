@@ -19,14 +19,6 @@ export const genreShareTrend = [
   { year: 2024, pop: 39, hipHop: 28, rock: 8, dance: 12, country: 6, latin: 4, rnb: 3 },
 ];
 
-export const popularityConcentrationTrend = [
-  { year: 2000, artistsForHalfOfStreams: 78 },
-  { year: 2005, artistsForHalfOfStreams: 71 },
-  { year: 2010, artistsForHalfOfStreams: 64 },
-  { year: 2015, artistsForHalfOfStreams: 56 },
-  { year: 2020, artistsForHalfOfStreams: 49 },
-  { year: 2024, artistsForHalfOfStreams: 44 },
-];
 
 export const macroSources = [
   "Billboard Hot 100 historical chart data",

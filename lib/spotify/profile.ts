@@ -17,7 +17,6 @@ type SpotifyArtistResponse = {
   followers?: {
     total: number;
   };
-  popularity: number;
   images: Array<{
     url: string;
     width: number;
@@ -44,7 +43,6 @@ type SpotifyTrackResponse = {
     }>;
   };
   duration_ms: number;
-  popularity: number;
   explicit: boolean;
 };
 
@@ -119,7 +117,6 @@ async function enrichArtists(artists: SpotifyArtistResponse[], accessToken: stri
         ...artist,
         genres: enriched.genres ?? artist.genres ?? [],
         followers: enriched.followers ?? artist.followers,
-        popularity: enriched.popularity ?? artist.popularity,
         images: enriched.images?.length ? enriched.images : artist.images,
       };
     });
@@ -154,7 +151,6 @@ export async function fetchSpotifyProfile(accessToken: string): Promise<SpotifyP
     name: artist.name,
     genres: artist.genres ?? [],
     followers: artist.followers?.total ?? 0,
-    popularity: artist.popularity ?? 0,
     images: artist.images ?? [],
   });
 
@@ -169,7 +165,6 @@ export async function fetchSpotifyProfile(accessToken: string): Promise<SpotifyP
       images: track.album.images ?? [],
     },
     durationMs: track.duration_ms,
-    popularity: track.popularity ?? 0,
     explicit: track.explicit,
   });
 

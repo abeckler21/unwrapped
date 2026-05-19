@@ -10,14 +10,12 @@ type Props = {
 const COMPONENT_LABELS: Record<ScoreBreakdownItem["key"], string> = {
   genreConcentration: "Genre concentration",
   artistRepetition: "Artist repetition",
-  popularitySkew: "Popularity skew",
   temporalConsistency: "Taste consistency",
 };
 
 const KEYS: ScoreBreakdownItem["key"][] = [
   "genreConcentration",
   "artistRepetition",
-  "popularitySkew",
   "temporalConsistency",
 ];
 

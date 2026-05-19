@@ -240,34 +240,6 @@ export default async function ArtistPage({ params }: Props) {
         </div>
       </section>
 
-      {/* Popularity trajectory */}
-      {analysis.popularityTrajectory.length >= 2 && (
-        <section className="panel p-6 sm:p-8">
-          <p className="eyebrow">Popularity Trajectory</p>
-          <h2 className="mt-1 text-lg font-semibold text-[var(--text-strong)]">
-            Peak popularity per year
-          </h2>
-          <div className="mt-4 flex flex-col gap-2">
-            {analysis.popularityTrajectory.map((pt) => (
-              <div key={pt.year} className="flex items-center gap-3">
-                <span className="w-10 shrink-0 text-xs tabular-nums text-[var(--text-muted)]">
-                  {pt.year}
-                </span>
-                <div className="flex-1 h-2 rounded-full bg-white/8 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-[var(--accent)]/60"
-                    style={{ width: `${pt.popularity}%` }}
-                  />
-                </div>
-                <span className="w-8 shrink-0 text-right text-xs tabular-nums text-[var(--text-muted)]">
-                  {pt.popularity}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* Album table */}
       <section className="panel p-6 sm:p-8">
         <p className="eyebrow">Discography</p>

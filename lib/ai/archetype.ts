@@ -44,8 +44,8 @@ const ARCHETYPES = [
   {
     name: 'The Archaeologist',
     test: (s: BubbleScoreResult) => {
-      const pop = s.breakdown.find(b => b.key === 'popularitySkew')
-      return (pop?.score ?? 100) <= 40
+      const temporal = s.breakdown.find(b => b.key === 'temporalConsistency')
+      return (temporal?.score ?? 100) <= 40
     },
   },
   {

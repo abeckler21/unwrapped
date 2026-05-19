@@ -9,7 +9,6 @@ type SpotifySearchResult = {
       id: string
       name: string
       genres?: string[]
-      popularity?: number
       followers?: { total: number }
       images?: { url: string }[]
     }>
