@@ -57,11 +57,6 @@ export default async function ComparePage() {
             the same data shown on your share page. No write access to your
             Spotify account is granted to your friend.
           </p>
-          <div className="mt-4 flex gap-3">
-            <Link href="/dashboard" className="button-secondary text-sm">
-              Back to dashboard
-            </Link>
-          </div>
         </div>
       </section>
     </main>

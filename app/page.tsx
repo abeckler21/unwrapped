@@ -21,9 +21,6 @@ export default function Home() {
             <Link href="/api/auth/login" className="button-primary text-base px-7 py-3.5">
               Log in with Spotify
             </Link>
-            <Link href="/dashboard" className="button-secondary text-base px-7 py-3.5">
-              See a preview
-            </Link>
           </div>
         </div>
       </section>

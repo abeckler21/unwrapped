@@ -77,13 +77,7 @@ export default function AnalyzePage() {
 
       {/* Header */}
       <section>
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-[var(--text-soft)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
-        >
-          ← Back to dashboard
-        </Link>
-        <h1 className="mt-4 text-4xl font-bold text-[var(--text-strong)] sm:text-5xl">
+        <h1 className="text-4xl font-bold text-[var(--text-strong)] sm:text-5xl">
           Analyze
         </h1>
         <p className="mt-3 text-sm leading-7 text-[var(--text-muted)]">

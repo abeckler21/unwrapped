@@ -647,9 +647,6 @@ export function NarrativeContent({
               </p>
 
               <div className="pt-4 flex flex-wrap justify-center gap-3">
-                <Link href="/dashboard" className="button-secondary text-sm px-5 py-2.5">
-                  &#8592; Back to dashboard
-                </Link>
                 {usingDemoData && (
                   <Link href="/api/auth/login" className="button-primary text-sm px-5 py-2.5">
                     Log in to see your real story

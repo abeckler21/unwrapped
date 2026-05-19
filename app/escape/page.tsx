@@ -55,13 +55,7 @@ export default async function EscapePage() {
 
       {/* Header */}
       <section>
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-[var(--text-soft)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
-        >
-          ← Back to dashboard
-        </Link>
-        <h1 className="mt-4 text-4xl font-bold text-[var(--text-strong)] sm:text-5xl">
+        <h1 className="text-4xl font-bold text-[var(--text-strong)] sm:text-5xl">
           Escape the Bubble
         </h1>
         {isDepthMode ? (
@@ -101,9 +95,6 @@ export default async function EscapePage() {
             This can happen when Spotify&apos;s search returns limited results for your genres.
             Try again in a few minutes — results vary by region and catalog availability.
           </p>
-          <Link href="/dashboard" className="button-secondary mt-6 inline-flex text-sm">
-            Back to dashboard
-          </Link>
         </div>
       )}
 

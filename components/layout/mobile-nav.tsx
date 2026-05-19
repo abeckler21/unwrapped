@@ -9,10 +9,10 @@ type Props = {
 }
 
 const NAV_LINKS = [
-  { href: "/dashboard", label: "Dashboard", authRequired: false },
-  { href: "/story", label: "Story", authRequired: false },
-  { href: "/history", label: "History", authRequired: false },
-  { href: "/explore", label: "Explore", authRequired: false },
+  { href: "/dashboard", label: "Dashboard", authRequired: true },
+  { href: "/story", label: "Story", authRequired: true },
+  { href: "/history", label: "History", authRequired: true },
+  { href: "/explore", label: "Explore", authRequired: true },
   { href: "/compare", label: "Compare", authRequired: true },
   { href: "/escape", label: "Escape", authRequired: true },
   { href: "/artist", label: "Analyze", authRequired: true },

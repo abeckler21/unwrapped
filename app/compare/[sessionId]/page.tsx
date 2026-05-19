@@ -155,9 +155,6 @@ export default async function CompareSessionPage({ params }: Props) {
           <div className="mt-8">
             <ShareLink sessionId={sessionId} />
           </div>
-          <Link href="/dashboard" className="button-secondary mt-6 inline-flex text-sm">
-            Back to dashboard
-          </Link>
         </div>
       </main>
     );

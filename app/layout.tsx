@@ -38,45 +38,45 @@ export default async function RootLayout({
 
               {/* Desktop nav — hidden below lg */}
               <nav className="hidden lg:flex items-center gap-2 text-sm">
-                <Link
-                  href="/dashboard"
-                  className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-strong)] transition-colors"
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  href="/story"
-                  className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-strong)] transition-colors"
-                >
-                  Story
-                </Link>
-                <Link
-                  href="/history"
-                  className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-strong)] transition-colors"
-                >
-                  History
-                </Link>
-                <Link
-                  href="/explore"
-                  className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-strong)] transition-colors"
-                >
-                  Explore
-                </Link>
                 {hasActiveSession && (
-                  <Link
-                    href="/escape"
-                    className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-strong)] transition-colors"
-                  >
-                    Escape
-                  </Link>
-                )}
-                {hasActiveSession && (
-                  <Link
-                    href="/artist"
-                    className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-strong)] transition-colors"
-                  >
-                    Analyze
-                  </Link>
+                  <>
+                    <Link
+                      href="/dashboard"
+                      className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-strong)] transition-colors"
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      href="/story"
+                      className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-strong)] transition-colors"
+                    >
+                      Story
+                    </Link>
+                    <Link
+                      href="/history"
+                      className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-strong)] transition-colors"
+                    >
+                      History
+                    </Link>
+                    <Link
+                      href="/explore"
+                      className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-strong)] transition-colors"
+                    >
+                      Explore
+                    </Link>
+                    <Link
+                      href="/escape"
+                      className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-strong)] transition-colors"
+                    >
+                      Escape
+                    </Link>
+                    <Link
+                      href="/artist"
+                      className="px-4 py-2 text-[var(--text-muted)] hover:text-[var(--text-strong)] transition-colors"
+                    >
+                      Analyze
+                    </Link>
+                  </>
                 )}
                 {hasActiveSession ? (
                   <div className="ml-2 flex items-center gap-2">
